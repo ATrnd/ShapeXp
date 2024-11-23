@@ -3,6 +3,7 @@ cache/
 out/
 doc/
 _ref/
+/lib/
 
 # Ignores development broadcast logs
 !/broadcast
