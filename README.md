@@ -58,18 +58,80 @@ which throws a gigantic fireball, for instance, on the boss if Alice hits the bo
 ![ShapeXp_proto_0.1](https://github.com/ATrnd/ShapeXp/blob/main/img/ShapeXp_proto_0.1.jpg)
 
 
+# **Changelog for ShapeXpNFT Test Suite**
+
+## **[Version 0.1.0]**
+
+### **Core Features**
+- **Minting Functionality**:
+  - Verified successful minting of a token and its ownership assignment.
+  - Ensured unique token IDs for each mint, starting from 0.
+  - Tested sequential minting to confirm no skipped token IDs.
+- **Duplicate Mint Prevention**:
+  - Added a test to revert minting attempts by addresses that have already minted a token.
+
+### **Transfer Restrictions**
+- Ensured transfers (`safeTransferFrom` and `transferFrom`) are fully blocked:
+  - Added tests to emit `ShapeXpNFT__TransfersNotAllowed` for all transfer attempts.
+- Validated that transfers using invalid inputs are blocked.
+
+### **Approval Restrictions**
+- Blocked all approval-related functionalities:
+  - Prevented calls to `approve`, `setApprovalForAll`, and `isApprovedForAll`.
+  - Ensured that these methods emit `ShapeXpNFT__ApprovalNotAllowed` upon invocation.
+- Verified that `getApproved` always returns the zero address when no approvals are set.
+
+### **Reentrancy Protection**
+- Added test cases to ensure reentrancy is blocked during transfer attempts, emitting `ShapeXpNFT__TransfersNotAllowed`.
+
+### **Ownership & Balance Validation**
+- Verified ownership of minted tokens and the correct balance for each address.
+- Ensured no ownership changes occur when transfer operations are blocked.
+
+### **Miscellaneous**
+- Introduced edge-case handling:
+  - Tests for admin-level approvals to emit `ShapeXpNFT__ApprovalNotAllowed`.
+  - Tests for invalid transfer attempts by non-owners.
+- Ensured comprehensive error messaging for user feedback on invalid operations.
+
+
 <!-- ROADMAP -->
 ## Roadmap
 
 - [x] Project Vision README
 - [ ] README Iteration
-- [ ] Access Token implementation
+- [x] Access Token implementation
 - [ ] Access Token Early Developer Access Implementations for Hardhat & Foundry
 - [ ] Getting Started & Usage Guide
 - [ ] Auxiliary contract implementation
 - [ ] Inventory manager contract implementation
 - [ ] Experience manager contract implementation
 - [ ] Level manager contract implementation
+
+### NFT Contract Development
+- [x] ShapeXpNFT Core Contract
+  - [x] Minting functionality for single-token minting per address.
+  - [x] Custom errors for minting, transfers, and approvals (`ShapeXpNFT__AlreadyMinted`, `ShapeXpNFT__TransfersNotAllowed`, `ShapeXpNFT__ApprovalNotAllowed`).
+  - [x] Restriction of transfers and approvals.
+- [ ] Comprehensive Unit Tests for ShapeXpNFT
+  - [x] Test minting functionality and ownership assignment.
+  - [x] Test duplicate minting prevention.
+  - [x] Test transfer restriction enforcement (`safeTransferFrom`, `transferFrom`).
+  - [x] Test approval restriction enforcement (`approve`, `setApprovalForAll`).
+  - [x] Test for `getApproved` default behavior (returns zero address).
+  - [x] Test token ID uniqueness and sequential allocation.
+  - [ ] Add edge-case testing for custom error handling.
+- [ ] Integration Testing with other components.
+  - [ ] Verify ShapeXpNFT compatibility with auxiliary contracts (e.g., inventory, experience manager).
+  - [ ] Simulate user workflows for minting and querying token ownership.
+
+### Contract Ecosystem Extensions
+- [ ] Dynamic Minting Logic
+  - [ ] Introduce minting restrictions or rewards based on external factors (e.g., level or experience).
+  - [ ] Enable time-limited or event-based minting opportunities.
+- [ ] Expand Error Handling
+  - [ ] Add context-specific revert messages for invalid operations.
+  - [ ] Standardize error reporting across the entire contract suite.
 
 <!-- LICENSE -->
 ## License
