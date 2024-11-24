@@ -10,13 +10,6 @@ _ref/
 /broadcast/**/dry-run/
 *.log
 
-# Ignore everything in lib/ except placeholder files
-lib/*
-!lib/.gitkeep
-
-# Docs
-docs/
-
 # Dotenv file
 .env
 
