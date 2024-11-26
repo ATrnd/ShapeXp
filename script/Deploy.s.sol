@@ -3,18 +3,18 @@ pragma solidity ^0.8.28;
 
 import {Script, console} from "forge-std/Script.sol";
 import {ShapeXpNFT} from "../src/ShapeXpNFT.sol";
-import {ShapeXpAUX} from "../src/ShapeXpAUX.sol";
+import {ShapeXpInv} from "../src/ShapeXpInv.sol";
 
 contract ShapeXpNFTScript is Script {
     ShapeXpNFT public shapeXpNFT;
-    ShapeXpAUX public shapeXpAUX;
+    ShapeXpInv public shapeXpInv;
 
     function setUp() public {}
 
     function run() public {
         vm.startBroadcast();
         shapeXpNFT = new ShapeXpNFT();
-        shapeXpAUX = new ShapeXpAUX(address(shapeXpNFT));
+        shapeXpInv = new ShapeXpInv(address(shapeXpNFT));
         vm.stopBroadcast();
     }
 }
