@@ -140,4 +140,114 @@ contract ShapeXpNFTTest is Test {
         vm.prank(user2);
         shapeXpNFT.safeTransferFrom(user1, user2, 0);
     }
+
+    function test_MultipleUsersCanMint() public {
+        uint256 expectedTokens = 5;
+        address[] memory users = new address[](expectedTokens);
+
+        // Create users and mint tokens
+        for (uint256 i = 0; i < expectedTokens; i++) {
+            users[i] = makeAddr(string.concat("user", vm.toString(i)));
+            vm.prank(users[i]);
+            shapeXpNFT.mint();
+
+            // Verify ownership
+            assertEq(shapeXpNFT.ownerOf(i), users[i], "User should own their minted token");
+            assertEq(shapeXpNFT.balanceOf(users[i]), 1, "User should have exactly one token");
+        }
+    }
+
+    function test_BalanceAfterMint() public {
+        vm.prank(alice);
+        shapeXpNFT.mint();
+
+        assertEq(shapeXpNFT.balanceOf(alice), 1, "Balance should be 1 after minting");
+        assertEq(shapeXpNFT.balanceOf(user1), 0, "Balance should be 0 for non-minter");
+    }
+
+    function test_RevertOnNonexistentTokenURI() public {
+        vm.expectRevert();
+        shapeXpNFT.tokenURI(999);
+    }
+
+    function test_NameAndSymbol() public view {
+        string memory expectedName = "ShapeXpNFT";
+        string memory expectedSymbol = "SXP";
+
+        assertEq(shapeXpNFT.name(), expectedName, "Contract name should match");
+        assertEq(shapeXpNFT.symbol(), expectedSymbol, "Contract symbol should match");
+    }
+
+    function test_RevertOnZeroAddressTransfer() public {
+        vm.prank(alice);
+        shapeXpNFT.mint();
+
+        vm.expectRevert(ShapeXpNFT.ShapeXpNFT__TransfersNotAllowed.selector);
+        vm.prank(alice);
+        shapeXpNFT.safeTransferFrom(alice, address(0), 0);
+    }
+
+    function test_RevertOnSelfTransfer() public {
+        vm.prank(alice);
+        shapeXpNFT.mint();
+
+        vm.expectRevert(ShapeXpNFT.ShapeXpNFT__TransfersNotAllowed.selector);
+        vm.prank(alice);
+        shapeXpNFT.safeTransferFrom(alice, alice, 0);
+    }
+
+    function test_RevertOnNonexistentTokenTransfer() public {
+        vm.expectRevert(ShapeXpNFT.ShapeXpNFT__TransfersNotAllowed.selector);
+        vm.prank(alice);
+        shapeXpNFT.safeTransferFrom(alice, user1, 999);
+    }
+
+    function test_ConsecutiveMintAttempts() public {
+        vm.startPrank(alice);
+
+        // First mint should succeed
+        shapeXpNFT.mint();
+        assertEq(shapeXpNFT.ownerOf(0), alice, "First mint should succeed");
+
+        // Second mint should fail
+        vm.expectRevert(abi.encodeWithSelector(ShapeXpNFT.ShapeXpNFT__AlreadyMinted.selector, alice));
+        shapeXpNFT.mint();
+
+        // Third mint should also fail
+        vm.expectRevert(abi.encodeWithSelector(ShapeXpNFT.ShapeXpNFT__AlreadyMinted.selector, alice));
+        shapeXpNFT.mint();
+
+        vm.stopPrank();
+    }
+
+    function test_SupportsInterface() public view {
+        // ERC721 interface ID
+        bytes4 erc721InterfaceId = 0x80ac58cd;
+        // ERC165 interface ID
+        bytes4 erc165InterfaceId = 0x01ffc9a7;
+
+        assert(shapeXpNFT.supportsInterface(erc721InterfaceId));
+        assert(shapeXpNFT.supportsInterface(erc165InterfaceId));
+    }
+
+    function test_RevertOnApproveNonexistentToken() public {
+        vm.prank(alice);
+        vm.expectRevert(ShapeXpNFT.ShapeXpNFT__ApprovalNotAllowed.selector);
+        shapeXpNFT.approve(user1, 999);
+    }
+
+    function test_GetApprovedNonexistentToken() public view {
+        address approvedAddr = shapeXpNFT.getApproved(999);
+        assertEq(approvedAddr, address(0), "Approved address should be zero the address");
+    }
+
+    function test_MintGasUsage() public {
+        // Test gas usage for minting
+        vm.prank(alice);
+        uint256 gasBefore = gasleft();
+        shapeXpNFT.mint();
+        uint256 gasAfter = gasleft();
+        uint256 gasUsed = gasBefore - gasAfter;
+        assert(gasUsed < 100000);
+    }
 }

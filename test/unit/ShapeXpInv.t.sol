@@ -3,14 +3,14 @@ pragma solidity ^0.8.28;
 
 import {Test, console} from "forge-std/Test.sol";
 import {ShapeXpNFT} from "../../src/ShapeXpNFT.sol";
-import {ShapeXpInv} from "../../src/ShapeXpInv.sol";
+import {ShapeXpInvExp} from "../../src/ShapeXpInvExp.sol";
 import {MockInvalidContract} from "../mock/MockInvalidContract.sol";
 import {MockERC721} from "../mock/MockERC721.sol";
 
 contract ShapeXpInvTest is Test {
     MockERC721 public mockERC721;
     ShapeXpNFT public shapeXpNFT;
-    ShapeXpInv public shapeXpInv;
+    ShapeXpInvExp public shapeXpInvExp;
 
     address public alice = makeAddr("alice");
     address public user1 = makeAddr("user1");
@@ -19,311 +19,223 @@ contract ShapeXpInvTest is Test {
     function setUp() public {
         mockERC721 = new MockERC721("MockNFT", "MNFT");
         shapeXpNFT = new ShapeXpNFT();
-        shapeXpInv = new ShapeXpInv(address(shapeXpNFT));
+        shapeXpInvExp = new ShapeXpInvExp(address(shapeXpNFT));
     }
 
-    function test_InvalidERC721Contract() public {
-        vm.expectRevert(ShapeXpInv.ShapeXpInv__InvalidERC721Contract.selector);
-        new ShapeXpInv(address(0));
+    // ============ Constructor Tests ============
+    function test_RevertWhen_ConstructorZeroAddress() public {
+        vm.expectRevert(ShapeXpInvExp.ShapeXpInvExp__InvalidERC721Contract.selector);
+        new ShapeXpInvExp(address(0));
     }
 
-    function test_IsERC721_InvalidContract() public {
+    function test_RevertWhen_ConstructorInvalidContract() public {
         address invalidERC721 = address(new MockInvalidContract());
-        vm.expectRevert(ShapeXpInv.ShapeXpInv__InvalidERC721Contract.selector);
-        new ShapeXpInv(invalidERC721);
+        vm.expectRevert(ShapeXpInvExp.ShapeXpInvExp__InvalidERC721Contract.selector);
+        new ShapeXpInvExp(invalidERC721);
     }
 
-    function test_IsERC721_ValidContract() public {
-        ShapeXpInv shapeXpInvCtr = new ShapeXpInv(address(shapeXpNFT));
+    function test_SuccessfulConstruction() public {
+        ShapeXpInvExp shapeXpInvCtr = new ShapeXpInvExp(address(shapeXpNFT));
         assertEq(shapeXpInvCtr.getTokenContract(), address(shapeXpNFT));
     }
 
+    // ============ Basic Getters Tests ============
     function test_GetTokenContract() public view {
-        assertEq(shapeXpInv.getTokenContract(), address(shapeXpNFT));
+        assertEq(shapeXpInvExp.getTokenContract(), address(shapeXpNFT));
     }
 
-    function test_RevertNonShapeXpNFTOwner_NotTokenOwner() public {
+    // ============ NFT Ownership Tests ============
+    function test_RevertWhen_NonShapeXpNFTOwner() public {
         vm.prank(alice);
-        vm.expectRevert(ShapeXpInv.ShapeXpInv__NotShapeXpNFTOwner.selector);
-        shapeXpInv.revertNonShapeXpNFTOwner();
+        vm.expectRevert(ShapeXpInvExp.ShapeXpInvExp__NotShapeXpNFTOwner.selector);
+        shapeXpInvExp.revertNonShapeXpNFTOwner();
     }
 
-    function test_RevertNonShapeXpNFTOwner_TokenOwner() public {
+    function test_SuccessWhen_ShapeXpNFTOwner() public {
         vm.prank(user1);
         shapeXpNFT.mint();
+
         vm.prank(user1);
-        shapeXpInv.revertNonShapeXpNFTOwner();
+        shapeXpInvExp.revertNonShapeXpNFTOwner();
     }
 
-    function test_RevertIfNotNFTOwner_NotOwner() public {
-        // Setup: Mint an NFT to user1
+    function test_RevertWhen_NotNFTOwner() public {
         vm.prank(user1);
         uint256 tokenId = mockERC721.mint(user1);
 
-        // Attempt to verify ownership as alice (non-owner)
         vm.prank(alice);
-        vm.expectRevert(ShapeXpInv.ShapeXpInv__NotNFTOwner.selector);
-        shapeXpInv.revertIfNotNFTOwner(address(mockERC721), tokenId);
+        vm.expectRevert(ShapeXpInvExp.ShapeXpInvExp__NotNFTOwner.selector);
+        shapeXpInvExp.revertIfNotNFTOwner(address(mockERC721), tokenId);
     }
 
-    function test_RevertIfNotNFTOwner_Owner() public {
-        // Setup: Mint an NFT to alice
-        vm.prank(alice);
-        uint256 tokenId = mockERC721.mint(alice);
-
-        // Verify ownership as alice (owner)
-        vm.prank(alice);
-        shapeXpInv.revertIfNotNFTOwner(address(mockERC721), tokenId);
-        // No revert expected - test passes if function doesn't revert
-    }
-
-    function test_MultipleUsers() public {
-        vm.prank(user1);
-        shapeXpNFT.mint();
-
-        vm.prank(user2);
-        shapeXpNFT.mint();
-
-        vm.prank(user1);
-        shapeXpInv.revertNonShapeXpNFTOwner();
-
-        vm.prank(user2);
-        shapeXpInv.revertNonShapeXpNFTOwner();
-
-        vm.prank(alice);
-        vm.expectRevert(ShapeXpInv.ShapeXpInv__NotShapeXpNFTOwner.selector);
-        shapeXpInv.revertNonShapeXpNFTOwner();
-    }
-
-    function test_BlockInvIfHasNoShapeXpToken() public {
-        vm.prank(alice);
-        uint256 newTokenId = mockERC721.mint(alice);
-        vm.prank(alice);
-        vm.expectRevert(ShapeXpInv.ShapeXpInv__NotShapeXpNFTOwner.selector);
-        shapeXpInv.addNFTToInventory(address(mockERC721), newTokenId, address(0));
-    }
-
-    function test_BlockInvIfHasInputsNotOwnedNFT() public {
-        vm.prank(alice);
-        shapeXpNFT.mint();
-
-        uint256 newTokenIdUser = mockERC721.mint(user1);
-
-        vm.prank(alice);
-        vm.expectRevert(ShapeXpInv.ShapeXpInv__NotNFTOwner.selector);
-        shapeXpInv.addNFTToInventory(address(mockERC721), newTokenIdUser, address(0));
-    }
-
-    function test_AddingToInv() public {
-        vm.prank(alice);
-        uint256 newTokenId = mockERC721.mint(alice);
-
-        vm.prank(alice);
-        shapeXpNFT.mint();
-
-        vm.prank(alice);
-        shapeXpInv.addNFTToInventory(address(mockERC721), newTokenId, address(0));
-
-        (address[3] memory nftContracts, uint256[3] memory tokenIds) = shapeXpInv.viewInventory(alice);
-        assertEq(nftContracts[0], address(mockERC721), "First NFT contract should match.");
-        assertEq(tokenIds[0], newTokenId, "First token ID should match.");
-    }
-
-    function test_RevertOnDuplicateNFT() public {
-        vm.prank(alice);
-        shapeXpNFT.mint();
-
+    function test_SuccessWhen_NFTOwner() public {
         vm.prank(alice);
         uint256 tokenId = mockERC721.mint(alice);
 
         vm.prank(alice);
-        shapeXpInv.addNFTToInventory(address(mockERC721), tokenId, address(0));
-
-        vm.prank(alice);
-        vm.expectRevert(ShapeXpInv.ShapeXpInv__NFTAlreadyInInventory.selector);
-        shapeXpInv.addNFTToInventory(address(mockERC721), tokenId, address(0));
+        shapeXpInvExp.revertIfNotNFTOwner(address(mockERC721), tokenId);
     }
 
-    function test_RevertOnInvFull() public {
+    // ============ Inventory Addition Tests ============
+    function test_RevertWhen_AddingShapeXpNFT() public {
         vm.prank(alice);
         shapeXpNFT.mint();
 
         vm.prank(alice);
-        uint256 tokenId1 = mockERC721.mint(alice);
-        uint256 tokenId2 = mockERC721.mint(alice);
-        uint256 tokenId3 = mockERC721.mint(alice);
-        uint256 tokenId4 = mockERC721.mint(alice);
-
-        vm.prank(alice);
-        shapeXpInv.addNFTToInventory(address(mockERC721), tokenId1, address(0));
-
-        vm.prank(alice);
-        shapeXpInv.addNFTToInventory(address(mockERC721), tokenId2, address(0));
-
-        vm.prank(alice);
-        shapeXpInv.addNFTToInventory(address(mockERC721), tokenId3, address(0));
-
-        vm.prank(alice);
-        vm.expectRevert(ShapeXpInv.ShapeXpInv__InventoryFull.selector);
-        shapeXpInv.addNFTToInventory(address(mockERC721), tokenId4, address(0));
+        vm.expectRevert(ShapeXpInvExp.ShapeXpInvExp__InvalidShapeXpContract.selector);
+        shapeXpInvExp.addNFTToInventory(address(shapeXpNFT), 0);
     }
 
-    function test_HasNFT_ReturnsTrueForExistingNFT() public {
-        vm.prank(alice);
-        shapeXpNFT.mint();
-
+    function test_RevertWhen_AddingWithoutShapeXpToken() public {
         vm.prank(alice);
         uint256 tokenId = mockERC721.mint(alice);
 
         vm.prank(alice);
-        shapeXpInv.addNFTToInventory(address(mockERC721), tokenId, address(0));
-
-        bool hasNft = shapeXpInv.hasNFT(alice, address(mockERC721), tokenId);
-        assertTrue(hasNft, "hasNFT should return true for existing NFT in inventory");
+        vm.expectRevert(ShapeXpInvExp.ShapeXpInvExp__NotShapeXpNFTOwner.selector);
+        shapeXpInvExp.addNFTToInventory(address(mockERC721), tokenId);
     }
 
-    function test_HasNFT_ReturnsFalseForNonexistentNFT() public {
+    function test_RevertWhen_AddingUnownedNFT() public {
         vm.prank(alice);
         shapeXpNFT.mint();
 
+        uint256 tokenId = mockERC721.mint(user1);
+
         vm.prank(alice);
+        vm.expectRevert(ShapeXpInvExp.ShapeXpInvExp__NotNFTOwner.selector);
+        shapeXpInvExp.addNFTToInventory(address(mockERC721), tokenId);
+    }
+
+    function test_RevertWhen_AddingDuplicateNFT() public {
+        vm.startPrank(alice);
+        shapeXpNFT.mint();
         uint256 tokenId = mockERC721.mint(alice);
 
-        bool hasNft = shapeXpInv.hasNFT(alice, address(mockERC721), tokenId);
-        assertFalse(hasNft, "hasNFT should return false for NFT not in inventory");
+        shapeXpInvExp.addNFTToInventory(address(mockERC721), tokenId);
+
+        vm.expectRevert(ShapeXpInvExp.ShapeXpInvExp__NFTAlreadyInInventory.selector);
+        shapeXpInvExp.addNFTToInventory(address(mockERC721), tokenId);
+        vm.stopPrank();
     }
 
-    function test_HasNFT_ReturnsFalseForWrongContract() public {
-        // Setup: Give alice a ShapeXp token
-        vm.prank(alice);
+    function test_RevertWhen_InventoryFull() public {
+        vm.startPrank(alice);
         shapeXpNFT.mint();
 
-        // Mint an NFT and add it to inventory
-        vm.prank(alice);
-        uint256 tokenId = mockERC721.mint(alice);
-
-        vm.prank(alice);
-        shapeXpInv.addNFTToInventory(address(mockERC721), tokenId, address(0));
-
-        // Check with wrong contract address
-        bool hasNft = shapeXpInv.hasNFT(alice, address(shapeXpNFT), tokenId);
-        assertFalse(hasNft, "hasNFT should return false for wrong contract address");
-    }
-
-    function test_HasNFT_MultipleNFTs() public {
-        // Setup: Give alice a ShapeXp token
-        vm.prank(alice);
-        shapeXpNFT.mint();
-
-        // Mint multiple NFTs and add them to inventory
-        vm.prank(alice);
-        uint256[] memory tokenIds = new uint256[](3);
-        for (uint256 i = 0; i < 3; i++) {
+        uint256[] memory tokenIds = new uint256[](4);
+        for (uint256 i = 0; i < 4; i++) {
             tokenIds[i] = mockERC721.mint(alice);
-            vm.prank(alice);
-            shapeXpInv.addNFTToInventory(address(mockERC721), tokenIds[i], address(0));
         }
 
-        // Check each NFT is found
-        for (uint256 i = 0; i < 3; i++) {
-            bool hasNft = shapeXpInv.hasNFT(alice, address(mockERC721), tokenIds[i]);
-            assertTrue(hasNft, string.concat("hasNFT should return true for token ID ", vm.toString(tokenIds[i])));
-        }
+        shapeXpInvExp.addNFTToInventory(address(mockERC721), tokenIds[0]);
+        shapeXpInvExp.addNFTToInventory(address(mockERC721), tokenIds[1]);
+        shapeXpInvExp.addNFTToInventory(address(mockERC721), tokenIds[2]);
+
+        vm.expectRevert(ShapeXpInvExp.ShapeXpInvExp__InventoryFull.selector);
+        shapeXpInvExp.addNFTToInventory(address(mockERC721), tokenIds[3]);
+        vm.stopPrank();
     }
 
-    function test_RemoveNFT_RevertNoShapeXpToken() public {
-        // Try to remove NFT without owning ShapeXp token
+    function test_SuccessfulInventoryAddition() public {
+        vm.startPrank(alice);
+        uint256 tokenId = mockERC721.mint(alice);
+        shapeXpNFT.mint();
+
+        shapeXpInvExp.addNFTToInventory(address(mockERC721), tokenId);
+
+        (address[3] memory nftContracts, uint256[3] memory tokenIds) = shapeXpInvExp.viewInventory(alice);
+        assertEq(nftContracts[0], address(mockERC721), "First NFT contract should match");
+        assertEq(tokenIds[0], tokenId, "First token ID should match");
+        vm.stopPrank();
+    }
+
+    // ============ Inventory Removal Tests ============
+    function test_RevertWhen_RemovingWithoutShapeXpToken() public {
         vm.prank(alice);
         uint256 tokenId = mockERC721.mint(alice);
 
         vm.prank(alice);
-        vm.expectRevert(ShapeXpInv.ShapeXpInv__NotShapeXpNFTOwner.selector);
-        shapeXpInv.removeNFTFromInventory(address(mockERC721), tokenId, address(0));
+        vm.expectRevert(ShapeXpInvExp.ShapeXpInvExp__NotShapeXpNFTOwner.selector);
+        shapeXpInvExp.removeNFTFromInventory(address(mockERC721), tokenId);
     }
 
-    function test_RemoveNFT_RevertNotNFTOwner() public {
-        // Setup: Give alice a ShapeXp token
+    function test_RevertWhen_RemovingUnownedNFT() public {
         vm.prank(alice);
         shapeXpNFT.mint();
 
-        // Mint NFT to user1
         vm.prank(user1);
         uint256 tokenId = mockERC721.mint(user1);
 
-        // Try to remove NFT that alice doesn't own
         vm.prank(alice);
-        vm.expectRevert(ShapeXpInv.ShapeXpInv__NotNFTOwner.selector);
-        shapeXpInv.removeNFTFromInventory(address(mockERC721), tokenId, address(0));
+        vm.expectRevert(ShapeXpInvExp.ShapeXpInvExp__NotNFTOwner.selector);
+        shapeXpInvExp.removeNFTFromInventory(address(mockERC721), tokenId);
     }
 
-    function test_RemoveNFT_RevertNFTNotInInventory() public {
-        // Setup: Give alice a ShapeXp token and an NFT
-        vm.prank(alice);
+    function test_RevertWhen_RemovingNFTNotInInventory() public {
+        vm.startPrank(alice);
         shapeXpNFT.mint();
-
-        vm.prank(alice);
         uint256 tokenId = mockERC721.mint(alice);
 
-        // Try to remove NFT that's not in inventory
-        vm.prank(alice);
-        vm.expectRevert(ShapeXpInv.ShapeXpInv__NFTNotInInventory.selector);
-        shapeXpInv.removeNFTFromInventory(address(mockERC721), tokenId, address(0));
+        vm.expectRevert(ShapeXpInvExp.ShapeXpInvExp__NFTNotInInventory.selector);
+        shapeXpInvExp.removeNFTFromInventory(address(mockERC721), tokenId);
+        vm.stopPrank();
     }
 
-    function test_RemoveNFT_SuccessfulRemoval() public {
-        // Setup: Give alice a ShapeXp token
-        vm.prank(alice);
+    function test_SuccessfulInventoryRemoval() public {
+        vm.startPrank(alice);
         shapeXpNFT.mint();
-
-        // Mint and add NFT to inventory
-        vm.prank(alice);
         uint256 tokenId = mockERC721.mint(alice);
 
-        vm.prank(alice);
-        shapeXpInv.addNFTToInventory(address(mockERC721), tokenId, address(0));
+        shapeXpInvExp.addNFTToInventory(address(mockERC721), tokenId);
+        shapeXpInvExp.removeNFTFromInventory(address(mockERC721), tokenId);
 
-        // Remove NFT
-        vm.prank(alice);
-        shapeXpInv.removeNFTFromInventory(address(mockERC721), tokenId, address(0));
-
-        // Verify removal
-        (address[3] memory contracts, uint256[3] memory tokenIds) = shapeXpInv.viewInventory(alice);
+        (address[3] memory contracts, uint256[3] memory tokenIds) = shapeXpInvExp.viewInventory(alice);
         assertEq(contracts[0], address(0), "NFT contract should be zero address after removal");
         assertEq(tokenIds[0], 0, "Token ID should be zero after removal");
+        vm.stopPrank();
     }
 
-    function test_RemoveNFT_FromDifferentPositions() public {
-        // Setup: Give alice a ShapeXp token
-        vm.prank(alice);
+    function test_SuccessfulRemovalFromDifferentPositions() public {
+        vm.startPrank(alice);
         shapeXpNFT.mint();
 
-        // Mint and add multiple NFTs
         uint256[] memory tokenIds = new uint256[](3);
         for (uint256 i = 0; i < 3; i++) {
-            vm.prank(alice);
             tokenIds[i] = mockERC721.mint(alice);
-
-            vm.prank(alice);
-            shapeXpInv.addNFTToInventory(address(mockERC721), tokenIds[i], address(0));
+            shapeXpInvExp.addNFTToInventory(address(mockERC721), tokenIds[i]);
         }
 
-        // Remove middle NFT (index 1)
-        vm.prank(alice);
-        shapeXpInv.removeNFTFromInventory(address(mockERC721), tokenIds[1], address(0));
+        shapeXpInvExp.removeNFTFromInventory(address(mockERC721), tokenIds[1]);
 
-        // Verify state
-        (address[3] memory contracts, uint256[3] memory ids) = shapeXpInv.viewInventory(alice);
+        (address[3] memory contracts, uint256[3] memory ids) = shapeXpInvExp.viewInventory(alice);
 
-        // First and last NFTs should remain
         assertEq(contracts[0], address(mockERC721), "First NFT should remain");
         assertEq(ids[0], tokenIds[0], "First token ID should remain");
 
-        // Middle slot should be empty
         assertEq(contracts[1], address(0), "Middle slot should be empty");
         assertEq(ids[1], 0, "Middle token ID should be zero");
 
-        // Last NFT should remain
         assertEq(contracts[2], address(mockERC721), "Last NFT should remain");
         assertEq(ids[2], tokenIds[2], "Last token ID should remain");
+        vm.stopPrank();
+    }
+
+    // ============ Multiple Users Tests ============
+    function test_MultipleUsersOwnership() public {
+        vm.prank(user1);
+        shapeXpNFT.mint();
+
+        vm.prank(user2);
+        shapeXpNFT.mint();
+
+        vm.prank(user1);
+        shapeXpInvExp.revertNonShapeXpNFTOwner();
+
+        vm.prank(user2);
+        shapeXpInvExp.revertNonShapeXpNFTOwner();
+
+        vm.prank(alice);
+        vm.expectRevert(ShapeXpInvExp.ShapeXpInvExp__NotShapeXpNFTOwner.selector);
+        shapeXpInvExp.revertNonShapeXpNFTOwner();
     }
 }
