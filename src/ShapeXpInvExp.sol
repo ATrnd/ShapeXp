@@ -4,9 +4,6 @@ pragma solidity ^0.8.28;
 import "@openzeppelin/contracts/token/ERC721/IERC721.sol";
 import "@openzeppelin/contracts/utils/introspection/IERC165.sol";
 
-/// @title ShapeXpInvExp - NFT Experience and Inventory Management Contract
-/// @notice Manages an inventory system where ShapeXP NFT holders can add other NFTs and track their experience points
-/// @dev Requires users to own a ShapeXP NFT to access functionality. Each user can hold up to 3 NFTs in their inventory
 contract ShapeXpInvExp {
     IERC721 private immutable s_shapeNFTCtr;
 
@@ -25,6 +22,7 @@ contract ShapeXpInvExp {
 
     mapping(address => UserInventory) private s_userInventories;
     mapping(address => mapping(bytes32 => NFTExperience)) private s_userNFTExperience;
+    mapping(address => uint256) private s_userGlobalExperience;
 
     // ==================== EVENTS ====================
     event ExperienceAdded(
@@ -35,6 +33,9 @@ contract ShapeXpInvExp {
         uint256 newTotal
     );
 
+    event GlobalExperienceAdded(address indexed user, uint256 amount, uint256 newTotal);
+    event GlobalExperienceDeducted(address indexed user, uint256 amount, uint256 remaining);
+
     // ==================== ERRORS ====================
     // Inventory Errors
     error ShapeXpInvExp__InvalidERC721Contract();
@@ -44,14 +45,12 @@ contract ShapeXpInvExp {
     error ShapeXpInvExp__NotNFTOwner();
     error ShapeXpInvExp__NFTAlreadyInInventory();
     error ShapeXpInvExp__NFTNotInInventory();
+    error ShapeXpInvExp__InsufficientGlobalExperience();
 
     // Experience Errors
     error ShapeXpInvExp__NotInInventory();
     error ShapeXpInvExp__InvalidAmount();
 
-    /// @notice Creates a new ShapeXpInvExp contract
-    /// @param shapeNFTCtr Address of the ShapeXP NFT contract that gates access to this system
-    /// @dev Validates that the provided address is a valid ERC721 contract
     constructor(address shapeNFTCtr) {
         if (shapeNFTCtr == address(0) || !_isERC721(shapeNFTCtr)) {
             revert ShapeXpInvExp__InvalidERC721Contract();
@@ -67,8 +66,7 @@ contract ShapeXpInvExp {
             return false;
         }
     }
-    /// @notice Checks if the caller owns a ShapeXP NFT
-    /// @dev Reverts if caller has zero ShapeXP NFTs
+
     function revertNonShapeXpNFTOwner() public view {
         if (s_shapeNFTCtr.balanceOf(msg.sender) == 0) {
             revert ShapeXpInvExp__NotShapeXpNFTOwner();
@@ -91,11 +89,6 @@ contract ShapeXpInvExp {
         }
     }
 
-    /// @notice Adds an NFT to the user's inventory
-    /// @param NFTCtr The contract address of the NFT to add
-    /// @param tokenId The token ID of the NFT to add
-    /// @dev User must own a ShapeXP NFT and the target NFT. Inventory limited to 3 slots
-    /// @dev Cannot add ShapeXP NFTs to inventory
     function addNFTToInventory(address NFTCtr, uint256 tokenId) external {
         revertNonShapeXpNFTOwner();
         revertIfNotNFTOwner(NFTCtr, tokenId);
@@ -120,10 +113,6 @@ contract ShapeXpInvExp {
         revert ShapeXpInvExp__InventoryFull();
     }
 
-    /// @notice Removes an NFT from the user's inventory
-    /// @param NFTCtr The contract address of the NFT to remove
-    /// @param tokenId The token ID of the NFT to remove
-    /// @dev Also resets any accumulated experience for the NFT
     function removeNFTFromInventory(address NFTCtr, uint256 tokenId) external {
         revertNonShapeXpNFTOwner();
         revertIfNotNFTOwner(NFTCtr, tokenId);
@@ -157,9 +146,6 @@ contract ShapeXpInvExp {
         inventory.tokenIds[foundIndex] = 0;
     }
 
-    /// @notice Views the NFTs in a user's inventory
-    /// @param user Address of the user whose inventory to view
-    /// @return Two arrays: NFT contract addresses and their corresponding token IDs
     function viewInventory(address user) external view returns (address[3] memory, uint256[3] memory) {
         return (s_userInventories[user].nftContracts, s_userInventories[user].tokenIds);
     }
@@ -175,11 +161,16 @@ contract ShapeXpInvExp {
     }
 
     // ==================== SECTION 2: EXPERIENCE FUNCTIONALITY ====================
-    /// @notice Creates a unique key for NFT experience tracking
-    /// @param targetNftContract The NFT contract address
-    /// @param tokenId The NFT token ID
-    /// @return bytes32 A unique hash combining contract address and token ID
-    /// @dev Used internally to create keys for the userNFTExperience mapping
+    function addGlobalExperience(uint256 amount) external {
+        revertNonShapeXpNFTOwner();
+        if (amount == 0) {
+            revert ShapeXpInvExp__InvalidAmount();
+        }
+
+        s_userGlobalExperience[msg.sender] += amount;
+        emit GlobalExperienceAdded(msg.sender, amount, s_userGlobalExperience[msg.sender]);
+    }
+
     function _createNFTKey(address targetNftContract, uint256 tokenId) private pure returns (bytes32) {
         return keccak256(abi.encodePacked(targetNftContract, tokenId));
     }
@@ -191,12 +182,7 @@ contract ShapeXpInvExp {
         }
     }
 
-    /// @notice Adds experience points to an NFT in the user's inventory
-    /// @param targetNftContract The NFT contract address
-    /// @param tokenId The NFT token ID
-    /// @param amount Amount of experience to add
-    /// @dev NFT must be in user's inventory and user must own both ShapeXP NFT and target NFT
-    /// @dev Emits ExperienceAdded event
+   // Modify addExperience to use global experience pool
     function addExperience(
         address targetNftContract,
         uint256 tokenId,
@@ -212,6 +198,14 @@ contract ShapeXpInvExp {
         if (amount == 0) {
             revert ShapeXpInvExp__InvalidAmount();
         }
+
+        // Check global experience balance
+        if (s_userGlobalExperience[msg.sender] < amount) {
+            revert ShapeXpInvExp__InsufficientGlobalExperience();
+        }
+
+        // Deduct from global experience
+        s_userGlobalExperience[msg.sender] -= amount;
 
         bytes32 nftKey = _createNFTKey(targetNftContract, tokenId);
         NFTExperience storage nftExp = s_userNFTExperience[msg.sender][nftKey];
@@ -232,13 +226,14 @@ contract ShapeXpInvExp {
             amount,
             nftExp.experience
         );
+        emit GlobalExperienceDeducted(msg.sender, amount, s_userGlobalExperience[msg.sender]);
     }
 
-    /// @notice Gets the current experience points for a specific NFT
-    /// @param user The address of the NFT owner
-    /// @param targetNftContract The NFT contract address
-    /// @param tokenId The NFT token ID
-    /// @return uint256 The current experience points of the NFT
+    // View function for global experience
+    function getGlobalExperience(address user) external view returns (uint256) {
+        return s_userGlobalExperience[user];
+    }
+
     function getNFTExperience(
         address user,
         address targetNftContract,

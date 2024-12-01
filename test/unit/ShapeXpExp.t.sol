@@ -4,10 +4,10 @@ pragma solidity ^0.8.28;
 import {Test, console} from "forge-std/Test.sol";
 import {ShapeXpNFT} from "../../src/ShapeXpNFT.sol";
 import {ShapeXpInvExp} from "../../src/ShapeXpInvExp.sol";
-import {MockInvalidContract} from "../mock/MockInvalidContract.sol";
 import {MockERC721} from "../mock/MockERC721.sol";
 
 contract ShapeXpExpTest is Test {
+    // ============ Storage ============
     MockERC721 public mockERC721;
     ShapeXpNFT public shapeXpNFT;
     ShapeXpInvExp public shapeXpInvExp;
@@ -16,27 +16,77 @@ contract ShapeXpExpTest is Test {
     address public user1 = makeAddr("user1");
     address public user2 = makeAddr("user2");
 
+    // ============ Events ============
+    event GlobalExperienceAdded(address indexed user, uint256 amount, uint256 newTotal);
+    event GlobalExperienceDeducted(address indexed user, uint256 amount, uint256 remaining);
+    event ExperienceAdded(
+        address indexed user,
+        address indexed shapeXpNftCtr,
+        uint256 indexed tokenId,
+        uint256 amount,
+        uint256 newTotal
+    );
+
     function setUp() public {
         mockERC721 = new MockERC721("MockNFT", "MNFT");
         shapeXpNFT = new ShapeXpNFT();
         shapeXpInvExp = new ShapeXpInvExp(address(shapeXpNFT));
     }
 
-    // ============ Experience Addition Revert Tests ============
-    function test_RevertWhen_AddingExperienceWithoutShapeXpToken() public {
-        vm.prank(alice);
-        uint256 tokenId = mockERC721.mint(alice);
-
+    // ============ Global Experience Addition Tests ============
+    function test_RevertWhen_AddingGlobalExpWithoutShapeXpNFT() public {
         vm.prank(alice);
         vm.expectRevert(ShapeXpInvExp.ShapeXpInvExp__NotShapeXpNFTOwner.selector);
-        shapeXpInvExp.addExperience(address(mockERC721), tokenId, 100);
+        shapeXpInvExp.addGlobalExperience(100);
     }
 
-    function test_RevertWhen_AddingExperienceToUnownedNFT() public {
+    function test_RevertWhen_AddingZeroGlobalExp() public {
+        vm.startPrank(alice);
+        shapeXpNFT.mint();
+
+        vm.expectRevert(ShapeXpInvExp.ShapeXpInvExp__InvalidAmount.selector);
+        shapeXpInvExp.addGlobalExperience(0);
+        vm.stopPrank();
+    }
+
+    function test_SuccessfulGlobalExpAddition() public {
+        vm.startPrank(alice);
+        shapeXpNFT.mint();
+
+        uint256 initialAmount = 100;
+        vm.expectEmit(true, false, false, true);
+        emit GlobalExperienceAdded(alice, initialAmount, initialAmount);
+        shapeXpInvExp.addGlobalExperience(initialAmount);
+
+        assertEq(shapeXpInvExp.getGlobalExperience(alice), initialAmount);
+        vm.stopPrank();
+    }
+
+    function test_MultipleGlobalExpAdditions() public {
+        vm.startPrank(alice);
+        shapeXpNFT.mint();
+
+        shapeXpInvExp.addGlobalExperience(100);
+        shapeXpInvExp.addGlobalExperience(150);
+
+        assertEq(shapeXpInvExp.getGlobalExperience(alice), 250);
+        vm.stopPrank();
+    }
+
+    // ============ NFT Experience Allocation Tests ============
+    function test_RevertWhen_AllocatingExpWithoutShapeXpNFT() public {
+        uint256 tokenId = 1;
+        vm.startPrank(alice);
+        mockERC721.mint(alice);
+        vm.expectRevert(ShapeXpInvExp.ShapeXpInvExp__NotShapeXpNFTOwner.selector);
+        shapeXpInvExp.addExperience(address(mockERC721), tokenId, 100);
+        vm.stopPrank();
+    }
+
+    function test_RevertWhen_AllocatingToUnownedNFT() public {
         vm.prank(alice);
         shapeXpNFT.mint();
 
-        vm.prank(user1);
         uint256 tokenId = mockERC721.mint(user1);
 
         vm.prank(alice);
@@ -44,7 +94,7 @@ contract ShapeXpExpTest is Test {
         shapeXpInvExp.addExperience(address(mockERC721), tokenId, 100);
     }
 
-    function test_RevertWhen_AddingExperienceToNFTNotInInventory() public {
+    function test_RevertWhen_AllocatingToNFTNotInInventory() public {
         vm.startPrank(alice);
         shapeXpNFT.mint();
         uint256 tokenId = mockERC721.mint(alice);
@@ -54,112 +104,95 @@ contract ShapeXpExpTest is Test {
         vm.stopPrank();
     }
 
-    function test_RevertWhen_AddingZeroExperience() public {
+    function test_RevertWhen_AllocatingInsufficientGlobalExp() public {
         vm.startPrank(alice);
         shapeXpNFT.mint();
         uint256 tokenId = mockERC721.mint(alice);
         shapeXpInvExp.addNFTToInventory(address(mockERC721), tokenId);
 
-        vm.expectRevert(ShapeXpInvExp.ShapeXpInvExp__InvalidAmount.selector);
-        shapeXpInvExp.addExperience(address(mockERC721), tokenId, 0);
-        vm.stopPrank();
-    }
-
-    // ============ Experience Addition Success Tests ============
-    function test_SuccessfulExperienceAddition() public {
-        vm.startPrank(alice);
-        shapeXpNFT.mint();
-        uint256 tokenId = mockERC721.mint(alice);
-        shapeXpInvExp.addNFTToInventory(address(mockERC721), tokenId);
-
+        shapeXpInvExp.addGlobalExperience(50);
+        vm.expectRevert(ShapeXpInvExp.ShapeXpInvExp__InsufficientGlobalExperience.selector);
         shapeXpInvExp.addExperience(address(mockERC721), tokenId, 100);
-
-        uint256 experience = shapeXpInvExp.getNFTExperience(alice, address(mockERC721), tokenId);
-        assertEq(experience, 100, "Experience should be 100");
         vm.stopPrank();
     }
 
-    function test_SuccessfulMultipleExperienceAdditions() public {
+    function test_SuccessfulExpAllocation() public {
         vm.startPrank(alice);
         shapeXpNFT.mint();
         uint256 tokenId = mockERC721.mint(alice);
         shapeXpInvExp.addNFTToInventory(address(mockERC721), tokenId);
+
+        uint256 globalAmount = 100;
+        uint256 allocateAmount = 50;
+
+        shapeXpInvExp.addGlobalExperience(globalAmount);
+
+        vm.expectEmit(true, true, true, true);
+        emit ExperienceAdded(alice, address(mockERC721), tokenId, allocateAmount, allocateAmount);
+        vm.expectEmit(true, false, false, true);
+        emit GlobalExperienceDeducted(alice, allocateAmount, globalAmount - allocateAmount);
+
+        shapeXpInvExp.addExperience(address(mockERC721), tokenId, allocateAmount);
+
+        assertEq(shapeXpInvExp.getNFTExperience(alice, address(mockERC721), tokenId), allocateAmount);
+        assertEq(shapeXpInvExp.getGlobalExperience(alice), globalAmount - allocateAmount);
+        vm.stopPrank();
+    }
+
+    function test_MultipleExpAllocations() public {
+        vm.startPrank(alice);
+        shapeXpNFT.mint();
+        uint256 tokenId = mockERC721.mint(alice);
+        shapeXpInvExp.addNFTToInventory(address(mockERC721), tokenId);
+
+        shapeXpInvExp.addGlobalExperience(300);
 
         shapeXpInvExp.addExperience(address(mockERC721), tokenId, 100);
         shapeXpInvExp.addExperience(address(mockERC721), tokenId, 150);
-        shapeXpInvExp.addExperience(address(mockERC721), tokenId, 250);
 
-        uint256 experience = shapeXpInvExp.getNFTExperience(alice, address(mockERC721), tokenId);
-        assertEq(experience, 500, "Total experience should be 500");
+        assertEq(shapeXpInvExp.getNFTExperience(alice, address(mockERC721), tokenId), 250);
+        assertEq(shapeXpInvExp.getGlobalExperience(alice), 50);
         vm.stopPrank();
-    }
-
-    // ============ Experience Retrieval Tests ============
-    function test_GetExperienceForNonexistentNFT() public view {
-        uint256 experience = shapeXpInvExp.getNFTExperience(alice, address(mockERC721), 999);
-        assertEq(experience, 0, "Experience should be 0 for non-existent NFT");
-    }
-
-    function test_GetExperienceForMultipleUsers() public {
-        // Setup and add experience for Alice
-        vm.startPrank(alice);
-        shapeXpNFT.mint();
-        uint256 tokenIdAlice = mockERC721.mint(alice);
-        shapeXpInvExp.addNFTToInventory(address(mockERC721), tokenIdAlice);
-        shapeXpInvExp.addExperience(address(mockERC721), tokenIdAlice, 100);
-        vm.stopPrank();
-
-        // Setup and add experience for User1
-        vm.startPrank(user1);
-        shapeXpNFT.mint();
-        uint256 tokenIdUser1 = mockERC721.mint(user1);
-        shapeXpInvExp.addNFTToInventory(address(mockERC721), tokenIdUser1);
-        shapeXpInvExp.addExperience(address(mockERC721), tokenIdUser1, 200);
-        vm.stopPrank();
-
-        // Verify experiences
-        uint256 aliceExp = shapeXpInvExp.getNFTExperience(alice, address(mockERC721), tokenIdAlice);
-        uint256 user1Exp = shapeXpInvExp.getNFTExperience(user1, address(mockERC721), tokenIdUser1);
-
-        assertEq(aliceExp, 100, "Alice's NFT experience should be 100");
-        assertEq(user1Exp, 200, "User1's NFT experience should be 200");
     }
 
     // ============ Experience State Tests ============
-    function test_ExperienceStateAfterRemoval() public {
+    function test_ExpResetAfterNFTRemoval() public {
         vm.startPrank(alice);
         shapeXpNFT.mint();
         uint256 tokenId = mockERC721.mint(alice);
 
         shapeXpInvExp.addNFTToInventory(address(mockERC721), tokenId);
-        shapeXpInvExp.addExperience(address(mockERC721), tokenId, 100);
+        shapeXpInvExp.addGlobalExperience(100);
+        shapeXpInvExp.addExperience(address(mockERC721), tokenId, 50);
+
         shapeXpInvExp.removeNFTFromInventory(address(mockERC721), tokenId);
-
-        uint256 experience = shapeXpInvExp.getNFTExperience(alice, address(mockERC721), tokenId);
-        assertEq(experience, 0, "Experience should be reset to 0 after removal");
-
-        shapeXpInvExp.addNFTToInventory(address(mockERC721), tokenId);
-        experience = shapeXpInvExp.getNFTExperience(alice, address(mockERC721), tokenId);
-        assertEq(experience, 0, "Experience should start at 0 for re-added NFT");
+        assertEq(shapeXpInvExp.getNFTExperience(alice, address(mockERC721), tokenId), 0);
+        assertEq(shapeXpInvExp.getGlobalExperience(alice), 50);
         vm.stopPrank();
     }
 
-    // ============ Event Tests ============
-    function test_ExperienceAddedEventEmission() public {
+    function test_ExpIsolationBetweenUsers() public {
+        // Setup Alice
         vm.startPrank(alice);
         shapeXpNFT.mint();
-        uint256 tokenId = mockERC721.mint(alice);
-        shapeXpInvExp.addNFTToInventory(address(mockERC721), tokenId);
-
-        vm.expectEmit(true, true, true, true);
-        emit ShapeXpInvExp.ExperienceAdded(
-            alice,
-            address(mockERC721),
-            tokenId,
-            100,
-            100
-        );
-        shapeXpInvExp.addExperience(address(mockERC721), tokenId, 100);
+        uint256 aliceTokenId = mockERC721.mint(alice);
+        shapeXpInvExp.addNFTToInventory(address(mockERC721), aliceTokenId);
+        shapeXpInvExp.addGlobalExperience(100);
+        shapeXpInvExp.addExperience(address(mockERC721), aliceTokenId, 50);
         vm.stopPrank();
+
+        // Setup User1
+        vm.startPrank(user1);
+        shapeXpNFT.mint();
+        uint256 user1TokenId = mockERC721.mint(user1);
+        shapeXpInvExp.addNFTToInventory(address(mockERC721), user1TokenId);
+        shapeXpInvExp.addGlobalExperience(200);
+        shapeXpInvExp.addExperience(address(mockERC721), user1TokenId, 100);
+        vm.stopPrank();
+
+        assertEq(shapeXpInvExp.getNFTExperience(alice, address(mockERC721), aliceTokenId), 50);
+        assertEq(shapeXpInvExp.getGlobalExperience(alice), 50);
+        assertEq(shapeXpInvExp.getNFTExperience(user1, address(mockERC721), user1TokenId), 100);
+        assertEq(shapeXpInvExp.getGlobalExperience(user1), 100);
     }
 }
