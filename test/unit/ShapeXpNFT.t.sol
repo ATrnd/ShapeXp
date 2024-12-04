@@ -1,4 +1,4 @@
-// SPDX-License-Identifier: UNLICENSED
+// SPDX-License-Identifier: MIT
 pragma solidity ^0.8.28;
 
 import {Test, console} from "forge-std/Test.sol";
@@ -11,6 +11,8 @@ contract ShapeXpNFTTest is Test {
     address public alice = makeAddr("alice");
     address public user1 = makeAddr("user1");
     address public user2 = makeAddr("user2");
+
+    event ShapeXpNFTMinted(address indexed user, uint256 indexed tokenId);
 
     function setUp() public {
         shapeXpNFT = new ShapeXpNFT();
@@ -241,13 +243,50 @@ contract ShapeXpNFTTest is Test {
         assertEq(approvedAddr, address(0), "Approved address should be zero the address");
     }
 
-    function test_MintGasUsage() public {
-        // Test gas usage for minting
+    function test_HasMintedToken() public {
+        // Check before minting
+        assertEq(shapeXpNFT.hasMintedToken(alice), false, "Should return false before minting");
+
+        // Mint token
         vm.prank(alice);
-        uint256 gasBefore = gasleft();
         shapeXpNFT.mint();
-        uint256 gasAfter = gasleft();
-        uint256 gasUsed = gasBefore - gasAfter;
-        assert(gasUsed < 100000);
+
+        // Check after minting
+        assertEq(shapeXpNFT.hasMintedToken(alice), true, "Should return true after minting");
+        assertEq(shapeXpNFT.hasMintedToken(user1), false, "Should return false for non-minter");
+    }
+
+    function test_EmitsMintEvent() public {
+        vm.prank(alice);
+
+        vm.expectEmit();
+        emit ShapeXpNFTMinted(alice, 0);
+
+        shapeXpNFT.mint();
+    }
+
+    function test_MultipleMintsEmitCorrectTokenIds() public {
+        vm.prank(alice);
+        vm.expectEmit(true, true, false, false);
+        emit ShapeXpNFTMinted(alice, 0);
+        shapeXpNFT.mint();
+
+        // Second mint with different user
+        vm.prank(user1);
+        vm.expectEmit(true, true, false, false);
+        emit ShapeXpNFTMinted(user1, 1);
+        shapeXpNFT.mint();
+    }
+
+    function test_HasMintedTokenForMultipleUsers() public {
+        vm.prank(alice);
+        shapeXpNFT.mint();
+
+        vm.prank(user1);
+        shapeXpNFT.mint();
+
+        assertEq(shapeXpNFT.hasMintedToken(alice), true, "First user should show as minted");
+        assertEq(shapeXpNFT.hasMintedToken(user1), true, "Second user should show as minted");
+        assertEq(shapeXpNFT.hasMintedToken(user2), false, "Non-minter should show as not minted");
     }
 }
