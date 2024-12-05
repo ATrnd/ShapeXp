@@ -6,6 +6,11 @@ ShapeXp is a dual experience system for NFTs with inventory management capabilit
 
 > ⚠️ **NOTICE**: This system was developed for the <a href="https://shape.network/shapecraft">ShapeCraft</a> Hackathon and is currently under development. Features and interfaces may change as the system evolves.
 
+## Deployed Contracts (Sepolia Testnet)
+
+- **ShapeXpNFT**: `0x2a12F0d3aa55656642BeD81337957e610E450607`
+- **ShapeXpInvExp**: `0x821098072DFB484e54218500F98C37f824bbb325`
+
 ## Core Features
 
 - **Soulbound Access NFT**: Users need to mint a ShapeXpNFT to access the experience system
