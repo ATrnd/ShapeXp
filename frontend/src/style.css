@@ -1,3 +1,16 @@
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
+
+@font-face {
+    font-family: 'aux_monoregular';
+    src: url('fonts/auxmono-regular-webfont.woff2') format('woff2'),
+         url('fonts/auxmono-regular-webfont.woff') format('woff');
+    font-weight: normal;
+    font-style: normal;
+
+}
+
+.aux-mono {
+    font-family: 'aux_monoregular';
+}
