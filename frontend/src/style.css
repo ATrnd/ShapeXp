@@ -28,3 +28,34 @@
   font-style: normal;
 }
 
+/* Page transitions */
+.page-transition {
+    position: absolute;
+    width: 100%;
+    opacity: 0;
+    visibility: hidden;
+    transition: opacity 0.5s ease-in-out, visibility 0.5s ease-in-out;
+}
+
+.page-transition.active {
+    opacity: 1;
+    visibility: visible;
+}
+
+/* Status messages */
+.wallet-status {
+    padding: 0.5rem 1rem;
+    border-radius: 0.5rem;
+    transition: opacity 0.3s ease-in-out;
+}
+
+.wallet-status.success {
+    background-color: rgba(34, 197, 94, 0.2);
+    border: 1px solid rgb(34, 197, 94);
+    color: white;
+}
+
+.wallet-status.error {
+    background-color: rgba(239, 68, 68, 0.2);
+    border: 1px solid rgb(239, 68, 68);
+}

@@ -4,6 +4,7 @@ out/
 doc/
 _ref/
 _refs/
+_transitions/
 
 # Ignores development broadcast logs
 !/broadcast
