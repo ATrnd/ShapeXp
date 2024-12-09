@@ -3,9 +3,11 @@ import { checkShapeXpNFTOwnership } from '../nft/validation';
 import { mintShapeXpNFT } from '../nft/minting';
 import { getGlobalExperience } from '../experience/experience-tracking';
 import { worldExperienceManager } from '../experience/world-xp-manager';
+import { ConfigManager } from '../config/ConfigManager';
 
 export class WalletConnection {
     private worldExperienceManager: worldExperienceManager | null = null;
+    private configManager: ConfigManager | null = null;
     constructor() {
         this.initializeConnection();
         this.checkExistingConnection();
@@ -185,6 +187,10 @@ export class WalletConnection {
                 if (noticeSection && ShapeXpMintButton) {
                     noticeSection.style.display = 'none';
                     ShapeXpMintButton.style.display = 'none';
+                }
+
+                if (!this.configManager) {
+                    this.configManager = new ConfigManager();
                 }
 
                 if (!this.worldExperienceManager) {
