@@ -2,8 +2,10 @@ import { getCurrentAddress, getProvider } from '../../utils/provider';
 import { checkShapeXpNFTOwnership } from '../nft/validation';
 import { mintShapeXpNFT } from '../nft/minting';
 import { getGlobalExperience } from '../experience/experience-tracking';
+import { worldExperienceManager } from '../experience/world-xp-manager';
 
 export class WalletConnection {
+    private worldExperienceManager: worldExperienceManager | null = null;
     constructor() {
         this.initializeConnection();
         this.checkExistingConnection();
@@ -136,6 +138,20 @@ export class WalletConnection {
         });
     }
 
+    private async updateExperienceDisplay() {
+        const titleSection = document.getElementById('ShapeXpTitleSection');
+        if (titleSection) {
+            try {
+                console.log('Updating global experience...');
+                const { formattedExperience } = await getGlobalExperience();
+                titleSection.textContent = `xp available :: ${formattedExperience}`;
+                console.log('Global experience updated:', formattedExperience);
+            } catch (error) {
+                console.log('Error updating global experience:', error);
+            }
+        }
+    }
+
     private async transitionToAccess(hasNFT: boolean) {
         const landingPage = document.getElementById('landing-page');
         const accessPage = document.getElementById('access-page');
@@ -154,6 +170,9 @@ export class WalletConnection {
 
         if (hasNFT && titleSection && ShapeXpMintButton) {
             try {
+
+                await this.updateExperienceDisplay();
+
                 console.log('Fetching global experience...');
                 const { formattedExperience } = await getGlobalExperience();
                 titleSection.textContent = `xp available :: ${formattedExperience}`;
@@ -167,6 +186,13 @@ export class WalletConnection {
                     noticeSection.style.display = 'none';
                     ShapeXpMintButton.style.display = 'none';
                 }
+
+                if (!this.worldExperienceManager) {
+                    this.worldExperienceManager = new worldExperienceManager(
+                        () => this.updateExperienceDisplay()
+                    );
+                }
+
             } catch (error) {
                 console.log('Error fetching global experience:', error);
             }

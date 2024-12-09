@@ -3,12 +3,12 @@ import { getCurrentAddress } from '../../utils/provider';
 
 export async function getGlobalExperience(): Promise<{ experience: bigint, formattedExperience: string }> {
     try {
-        console.log('1. Fetching global experience...');
+        console.log('--- Fetching global experience ---');
         const contract = await getShapeXpContract();
         const userAddress = await getCurrentAddress();
 
-        console.log('2. Contract address:', contract.target);
-        console.log('3. User address:', userAddress);
+        console.log('Contract address: ', contract.target);
+        console.log('User address: ', userAddress);
 
         // Check if function exists
         if (typeof contract.getGlobalExperience !== 'function') {
@@ -17,7 +17,7 @@ export async function getGlobalExperience(): Promise<{ experience: bigint, forma
 
         // Call the contract function
         const experience = await contract.getGlobalExperience(userAddress);
-        console.log('5. Raw experience value:', experience.toString());
+        console.log('Raw experience value: ', experience.toString());
 
         // Format the experience for display
         const formattedExperience = experience.toString();
