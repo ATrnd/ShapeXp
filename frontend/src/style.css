@@ -10,7 +10,21 @@
     font-style: normal;
 
 }
-
 .aux-mono {
     font-family: 'aux_monoregular';
 }
+
+.orbitron-regular {
+  font-family: "Orbitron", serif;
+  font-optical-sizing: auto;
+  font-weight: 400;
+  font-style: normal;
+}
+
+.orbitron-bold {
+  font-family: "Orbitron", serif;
+  font-optical-sizing: auto;
+  font-weight: 700;
+  font-style: normal;
+}
+
