@@ -1,9 +1,35 @@
 import { getGlobalExperience } from '../experience/experience-tracking';
+import { ConfigNFTManager } from './ConfigNFTManager';
 
 export class ConfigManager {
+    private nftManager: ConfigNFTManager | null = null;
+
     constructor() {
         this.initializeConfigButton();
         this.initializeBackButton();
+    }
+
+    private setupDisconnectHandler() {
+        const ethereum = window.ethereum;
+        if (!ethereum?.on) {
+            console.log('MetaMask not installed or ethereum.on not available');
+            return;
+        }
+
+        ethereum.on('accountsChanged', (accounts: string[]) => {
+            if (accounts.length === 0) {
+                console.log('Wallet disconnected, returning to landing page');
+                this.returnToLanding();
+            }
+        });
+    }
+
+    private returnToLanding() {
+        const configPage = document.getElementById('config-page');
+        const landingPage = document.getElementById('landing-page');
+
+        configPage?.classList.remove('active');
+        landingPage?.classList.add('active');
     }
 
     private initializeConfigButton() {
@@ -31,6 +57,10 @@ export class ConfigManager {
 
         accessPage?.classList.remove('active');
         configPage?.classList.add('active');
+
+        if (!this.nftManager) {
+            this.nftManager = new ConfigNFTManager();
+        }
 
         await this.updateXPDisplay();
     }

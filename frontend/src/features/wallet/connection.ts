@@ -115,8 +115,10 @@ export class WalletConnection {
     private handleDisconnect() {
         const landingPage = document.getElementById('landing-page');
         const accessPage = document.getElementById('access-page');
+        const configPage = document.getElementById('config-page');
 
         accessPage?.classList.remove('active');
+        configPage?.classList.remove('active');
         landingPage?.classList.add('active');
     }
 
