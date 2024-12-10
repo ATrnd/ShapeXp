@@ -1,5 +1,7 @@
 import { fetchUserNFTs, filterNFTs, SimpleNFT } from '../nft/nft-fetching';
 import { SHAPE_XP_NFT_ADDRESS } from '../../contracts/addresses';
+import { convertTokenId } from '../../utils/token-utils';
+import { addNFTToInventory } from '../inventory/inventory-actions';
 
 export class ConfigNFTManager {
     private readonly gridContainerId = 'configNFTGrid';
@@ -38,7 +40,33 @@ export class ConfigNFTManager {
             container.appendChild(img);
         }
 
+        container.addEventListener('click', async () => {
+            await this.handleNFTSelection(nft);
+        });
+
         return container;
+    }
+
+    private async handleNFTSelection(nft: SimpleNFT) {
+        try {
+            console.log('Selected NFT:', nft);
+
+            // Convert hex token ID to decimal
+            const convertedTokenId = convertTokenId(nft.tokenId);
+            console.log('Converted token ID:', convertedTokenId);
+
+            // Try to add NFT to inventory
+            const result = await addNFTToInventory(nft.contractAddress, convertedTokenId);
+
+            if (result.success) {
+                console.log('Successfully added NFT to inventory');
+            } else {
+                console.log('Failed to add NFT to inventory:', result.error);
+            }
+
+        } catch (error) {
+            console.log('Error handling NFT selection:', error);
+        }
     }
 
     private async renderNFTGrid() {
