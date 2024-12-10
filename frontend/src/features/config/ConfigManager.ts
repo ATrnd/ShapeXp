@@ -1,8 +1,10 @@
 import { getGlobalExperience } from '../experience/experience-tracking';
 import { ConfigNFTManager } from './ConfigNFTManager';
+import { ConfigInventoryManager } from '../inventory/config-inventory-manager';
 
 export class ConfigManager {
     private nftManager: ConfigNFTManager | null = null;
+    private inventoryManager: ConfigInventoryManager | null = null;
 
     constructor() {
         this.initializeConfigButton();
@@ -60,6 +62,9 @@ export class ConfigManager {
 
         if (!this.nftManager) {
             this.nftManager = new ConfigNFTManager();
+        }
+        if (!this.inventoryManager) {
+            this.inventoryManager = new ConfigInventoryManager();
         }
 
         await this.updateXPDisplay();
