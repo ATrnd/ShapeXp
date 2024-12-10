@@ -1,4 +1,7 @@
 import { fetchInventory } from './inventory-management';
+import { addNFTExperience } from '../nft/nft-experience-addition';
+import { getGlobalExperience } from '../experience/experience-tracking';
+import { removeNFTFromInventory } from '../nft/nft-inventory-removal';
 
 interface InventorySlot {
     nftContract: string;
@@ -17,6 +20,7 @@ export class ConfigInventoryManager {
 
     constructor() {
         this.initializeInventory();
+        this.setupExperienceControls();
     }
 
     private async initializeInventory() {
@@ -27,6 +31,90 @@ export class ConfigInventoryManager {
             this.updateInventoryDisplay();
         } catch (error) {
             console.log('Error fetching inventory:', error);
+        }
+    }
+
+    private setupExperienceControls() {
+        for (let i = 1; i <= this.SLOT_COUNT; i++) {
+            const addButton = document.getElementById(`ShapeXpInvAdd${i}`);
+            const slot = document.getElementById(`ShapeXpInv${i}`);
+            const removeButton = document.getElementById(`ShapeXpInvRemove${i}`);
+
+            if (addButton && slot) {
+                addButton.addEventListener('click', async () => {
+                    if (slot.dataset.contractAddress && slot.dataset.tokenId) {
+                        await this.handleAddExperience(
+                            slot.dataset.contractAddress,
+                            slot.dataset.tokenId
+                        );
+                    }
+                });
+            }
+
+            if (removeButton && slot) {
+                removeButton.addEventListener('click', async () => {
+                    if (slot.dataset.contractAddress && slot.dataset.tokenId) {
+                        await this.handleRemoveNFT(
+                            slot.dataset.contractAddress,
+                            slot.dataset.tokenId
+                        );
+                    }
+                });
+            }
+        }
+    }
+
+    private async handleRemoveNFT(contractAddress: string, tokenId: string) {
+        try {
+            console.log('Removing NFT:', { contractAddress, tokenId });
+
+            const result = await removeNFTFromInventory(contractAddress, tokenId);
+
+            if (result.success) {
+                console.log('NFT removed successfully');
+                // Refresh inventory to update UI
+                await this.refreshInventory();
+            } else {
+                console.log('Failed to remove NFT:', result.error);
+            }
+        } catch (error) {
+            console.log('Error removing NFT:', error);
+        }
+    }
+
+    private async handleAddExperience(contractAddress: string, tokenId: string) {
+        try {
+            console.log('Adding experience to NFT:', { contractAddress, tokenId });
+
+            const result = await addNFTExperience(contractAddress, tokenId);
+
+            if (result.success) {
+
+                console.log('Experience added successfully');
+                await this.refreshInventory();
+                await this.updateGlobalExperience();
+
+            } else {
+                console.log('Failed to add experience:', result.error);
+            }
+
+        } catch (error) {
+            console.log('Error adding experience:', error);
+        }
+    }
+
+   private async updateGlobalExperience() {
+        try {
+            const { formattedExperience } = await getGlobalExperience();
+            const xpDisplay = document.getElementById('ShapeXpConfigXpDisplay');
+
+            if (xpDisplay) {
+                xpDisplay.textContent = `xp available :: ${formattedExperience}`;
+            }
+
+            console.log('Global experience updated:', formattedExperience);
+        } catch (error) {
+            console.log('Error updating global experience:', error);
         }
     }
 

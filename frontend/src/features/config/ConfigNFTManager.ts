@@ -2,13 +2,21 @@ import { fetchUserNFTs, filterNFTs, SimpleNFT } from '../nft/nft-fetching';
 import { SHAPE_XP_NFT_ADDRESS } from '../../contracts/addresses';
 import { convertTokenId } from '../../utils/token-utils';
 import { addNFTToInventory } from '../inventory/inventory-actions';
+import { ConfigManager } from './ConfigManager';
+
 
 export class ConfigNFTManager {
     private readonly gridContainerId = 'configNFTGrid';
     private nfts: SimpleNFT[] = [];
+    private configManager: ConfigManager;
 
-    constructor() {
+    constructor(configManager: ConfigManager) {
+        this.configManager = configManager;
         this.initializeNFTGrid();
+    }
+
+    public async refreshNFTGrid() {
+        await this.initializeNFTGrid();
     }
 
     private async initializeNFTGrid() {
@@ -60,6 +68,7 @@ export class ConfigNFTManager {
 
             if (result.success) {
                 console.log('Successfully added NFT to inventory');
+                await this.configManager.refreshAll();
             } else {
                 console.log('Failed to add NFT to inventory:', result.error);
             }

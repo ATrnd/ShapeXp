@@ -11,6 +11,16 @@ export class ConfigManager {
         this.initializeBackButton();
     }
 
+    public async refreshAll() {
+        if (this.nftManager) {
+            // Use the public method instead
+            await this.nftManager.refreshNFTGrid();
+        }
+        if (this.inventoryManager) {
+            await this.inventoryManager.refreshInventory();
+        }
+    }
+
     private setupDisconnectHandler() {
         const ethereum = window.ethereum;
         if (!ethereum?.on) {
@@ -61,7 +71,7 @@ export class ConfigManager {
         configPage?.classList.add('active');
 
         if (!this.nftManager) {
-            this.nftManager = new ConfigNFTManager();
+            this.nftManager = new ConfigNFTManager(this);
         }
         if (!this.inventoryManager) {
             this.inventoryManager = new ConfigInventoryManager();
