@@ -1,5 +1,6 @@
 import { ExperienceAmount } from '../../contracts/abis';
 import { addGlobalExperience } from './add-experience';
+import { EXPERIENCE } from '../../constants';
 
 export class worldExperienceManager {
     private worldButtons: Record<string, { id: string; expType: ExperienceAmount }>;
@@ -7,9 +8,9 @@ export class worldExperienceManager {
 
     constructor(onExperienceUpdate: () => Promise<void>) {
         this.worldButtons = {
-            'ShapeXpWorldAbtn': { id: 'ShapeXpWorldAbtn', expType: ExperienceAmount.LOW },
-            'ShapeXpWorldBbtn': { id: 'ShapeXpWorldBbtn', expType: ExperienceAmount.MID },
-            'ShapeXpWorldCbtn': { id: 'ShapeXpWorldCbtn', expType: ExperienceAmount.HIGH }
+            'ShapeXpWorldAbtn': { id: 'ShapeXpWorldAbtn', expType: EXPERIENCE.TYPES.LOW },
+            'ShapeXpWorldBbtn': { id: 'ShapeXpWorldBbtn', expType: EXPERIENCE.TYPES.MID },
+            'ShapeXpWorldCbtn': { id: 'ShapeXpWorldCbtn', expType: EXPERIENCE.TYPES.HIGH }
         };
 
         this.onExperienceUpdate = onExperienceUpdate;

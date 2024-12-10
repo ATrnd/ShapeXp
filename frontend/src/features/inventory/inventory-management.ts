@@ -1,11 +1,11 @@
 // src/features/inventory-management.ts
+import { INVENTORY, UI, EXPERIENCE } from '../../constants/index';
 import { getShapeXpContract } from '../../contracts/contract-instances';
 import { getCurrentAddress } from '../../utils/provider';
 import { NETWORKS } from '../../network/network-config';
 import { getNFTExperience } from '../nft/nft-experience';
-import { ExperienceManager, TRANSFER_EXPERIENCE_AMOUNT } from '../experience/experience-transfer';
+import { ExperienceManager } from '../experience/experience-transfer';
 import { addNFTExperience } from '../nft/nft-experience-addition';
-import { MAX_ADDITION_PER_TURN } from '../experience/experience-transfer';
 
 // Define enhanced types for inventory
 interface InventorySlot {
@@ -23,6 +23,20 @@ interface InventoryData {
     slots: InventorySlot[];
     totalSlots: number;
 }
+
+const TOOLTIPS = {
+    ADD: {
+        ENABLED: 'Add experience to NFT',
+        MAX_REACHED: 'Maximum addition reached for this turn',
+        INSUFFICIENT: 'Not enough global experience',
+        MAX_TOTAL: `Maximum experience (${EXPERIENCE.MAX_AMOUNT}) reached`
+    },
+    REMOVE: {
+        ENABLED: 'Remove experience from NFT',
+        MIN_REACHED: 'Cannot reduce below blockchain experience',
+        BELOW_TRANSFER: `Cannot remove less than ${EXPERIENCE.TRANSFER_AMOUNT} experience`
+    }
+} as const;
 
 async function fetchNFTMetadata(contractAddress: string, tokenId: string) {
     try {
@@ -67,7 +81,7 @@ export async function fetchInventory(): Promise<InventoryData> {
         // Process slots and fetch metadata for non-empty slots
         const slots: InventorySlot[] = await Promise.all(
             nftContracts.map(async (contract: string, index: number) => {
-                const isEmpty = contract === '0x0000000000000000000000000000000000000000';
+                const isEmpty = contract === INVENTORY.EMPTY_ADDRESS;
 
                 if (isEmpty) {
                     return {
@@ -88,7 +102,7 @@ export async function fetchInventory(): Promise<InventoryData> {
 
         return {
             slots,
-            totalSlots: 3
+            totalSlots: INVENTORY.MAX_SLOTS
         };
 
     } catch (error: any) {
@@ -181,30 +195,82 @@ function setupExperienceControls(container: HTMLElement, expManager: ExperienceM
             const blockchainExp = expManager.getBlockchainExperience(contractAddress, tokenId);
             const pendingAddition = expManager.getPendingAddition(contractAddress, tokenId);
 
-            // Plus button is disabled if:
-            // 1. Not enough global experience
-            // 2. Already added maximum amount this turn
-            plusBtn.disabled =
-                globalExp < TRANSFER_EXPERIENCE_AMOUNT ||
-                pendingAddition >= MAX_ADDITION_PER_TURN;
+            console.log('Current experience values:', {
+                globalExp,
+                slotExp,
+                blockchainExp,
+                pendingAddition
+            });
 
-            // Minus button is disabled if:
-            // 1. Current experience is at or below blockchain experience
-            // 2. Current experience is less than transfer amount
-            minusBtn.disabled =
-                slotExp <= blockchainExp ||
-                slotExp < TRANSFER_EXPERIENCE_AMOUNT;
+            // Check if NFT has reached maximum experience
+            const isAtMaxExperience = slotExp >= EXPERIENCE.MAX_AMOUNT;
 
-            // Add tooltips for better UX
-            plusBtn.title = plusBtn.disabled ?
-                (pendingAddition >= MAX_ADDITION_PER_TURN ?
-                    'Maximum addition reached for this turn' :
-                    'Not enough global experience') :
-                'Add experience';
+            // Check if user has enough global experience to transfer
+            const insufficientGlobalExp = globalExp < EXPERIENCE.TRANSFER_AMOUNT;
 
-            minusBtn.title = minusBtn.disabled ?
-                'Cannot reduce below blockchain experience' :
-                'Remove experience';
+            // Check if user has reached maximum addition per turn
+            const maxAdditionReached = pendingAddition >= EXPERIENCE.MAX_ADDITION_PER_TURN;
+
+            // Disable plus button if any condition is true
+            plusBtn.disabled = insufficientGlobalExp || maxAdditionReached || isAtMaxExperience;
+
+            console.log('Plus button conditions:', {
+                isAtMaxExperience,
+                insufficientGlobalExp,
+                maxAdditionReached,
+                buttonDisabled: plusBtn.disabled
+            });
+
+            // Check if experience is at minimum (blockchain) level
+            const atMinExperience = slotExp <= blockchainExp;
+
+            // Check if current experience is below minimum transfer amount
+            const belowTransferAmount = slotExp < EXPERIENCE.TRANSFER_AMOUNT;
+
+            // Disable minus button if any condition is true
+            minusBtn.disabled = atMinExperience || belowTransferAmount;
+
+            console.log('Minus button conditions:', {
+                atMinExperience,
+                belowTransferAmount,
+                buttonDisabled: minusBtn.disabled
+            });
+
+            // Set plus button tooltip
+            if (plusBtn.disabled) {
+                if (isAtMaxExperience) {
+                    plusBtn.title = TOOLTIPS.ADD.MAX_TOTAL;
+                } else if (maxAdditionReached) {
+                    plusBtn.title = TOOLTIPS.ADD.MAX_REACHED;
+                } else {
+                    plusBtn.title = TOOLTIPS.ADD.INSUFFICIENT;
+                }
+            } else {
+                plusBtn.title = TOOLTIPS.ADD.ENABLED;
+            }
+
+            // Set minus button tooltip
+            if (minusBtn.disabled) {
+                if (atMinExperience) {
+                    minusBtn.title = TOOLTIPS.REMOVE.MIN_REACHED;
+                } else {
+                    minusBtn.title = TOOLTIPS.REMOVE.BELOW_TRANSFER;
+                }
+            } else {
+                minusBtn.title = TOOLTIPS.REMOVE.ENABLED;
+            }
+
+            console.log('Final button states:', {
+                plusButton: {
+                    disabled: plusBtn.disabled,
+                    tooltip: plusBtn.title
+                },
+                minusButton: {
+                    disabled: minusBtn.disabled,
+                    tooltip: minusBtn.title
+                }
+            });
+
         }
 
         // Function to update local experience displays

@@ -1,8 +1,5 @@
 // src/features/experience-transfer.ts
-
-// Constants
-export const TRANSFER_EXPERIENCE_AMOUNT = 500;
-export const MAX_ADDITION_PER_TURN = 500;
+import { EXPERIENCE } from '../../constants';
 
 export interface ExperienceState {
     globalExperience: number;
@@ -44,7 +41,7 @@ export class ExperienceManager {
 
     // Add experience to slot
     public addExperienceToSlot(contractAddress: string, tokenId: string): boolean {
-        if (this.state.globalExperience < TRANSFER_EXPERIENCE_AMOUNT) {
+        if (this.state.globalExperience < EXPERIENCE.TRANSFER_AMOUNT) {
             return false;
         }
 
@@ -52,16 +49,16 @@ export class ExperienceManager {
         const pendingAddition = this.state.pendingAdditions.get(slotId) || 0;
 
         // Check if we've reached the addition limit
-        if (pendingAddition >= MAX_ADDITION_PER_TURN) {
+       if (pendingAddition >= EXPERIENCE.MAX_ADDITION_PER_TURN) {
             return false;
         }
 
         const currentExp = this.state.slotExperiences.get(slotId) || 0;
 
         // Update state
-        this.state.globalExperience -= TRANSFER_EXPERIENCE_AMOUNT;
-        this.state.slotExperiences.set(slotId, currentExp + TRANSFER_EXPERIENCE_AMOUNT);
-        this.state.pendingAdditions.set(slotId, pendingAddition + TRANSFER_EXPERIENCE_AMOUNT);
+        this.state.globalExperience -= EXPERIENCE.TRANSFER_AMOUNT;
+        this.state.slotExperiences.set(slotId, currentExp + EXPERIENCE.TRANSFER_AMOUNT);
+        this.state.pendingAdditions.set(slotId, pendingAddition + EXPERIENCE.TRANSFER_AMOUNT);
 
         return true;
     }
@@ -73,17 +70,20 @@ export class ExperienceManager {
         const blockchainExp = this.state.blockchainExperiences.get(slotId) || 0;
 
         // Can't subtract below blockchain experience amount
-        if (currentExp <= blockchainExp || currentExp < TRANSFER_EXPERIENCE_AMOUNT) {
+        if (currentExp <= blockchainExp || currentExp < EXPERIENCE.TRANSFER_AMOUNT) {
             return false;
         }
 
         // Update state
-        this.state.globalExperience += TRANSFER_EXPERIENCE_AMOUNT;
-        this.state.slotExperiences.set(slotId, currentExp - TRANSFER_EXPERIENCE_AMOUNT);
+        this.state.globalExperience += EXPERIENCE.TRANSFER_AMOUNT;
+        this.state.slotExperiences.set(slotId, currentExp - EXPERIENCE.TRANSFER_AMOUNT);
 
         // Update pending additions
         const pendingAddition = this.state.pendingAdditions.get(slotId) || 0;
-        this.state.pendingAdditions.set(slotId, Math.max(0, pendingAddition - TRANSFER_EXPERIENCE_AMOUNT));
+        this.state.pendingAdditions.set(
+            slotId,
+            Math.max(0, pendingAddition - EXPERIENCE.TRANSFER_AMOUNT)
+        );
 
         return true;
     }

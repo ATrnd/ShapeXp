@@ -3,7 +3,7 @@ import { SHAPE_XP_NFT_ADDRESS } from '../../contracts/addresses';
 import { convertTokenId } from '../../utils/token-utils';
 import { addNFTToInventory } from '../inventory/inventory-actions';
 import { ConfigManager } from './ConfigManager';
-
+import { UI, INVENTORY } from '../../constants';
 
 export class ConfigNFTManager {
     private readonly gridContainerId = 'configNFTGrid';
@@ -32,7 +32,7 @@ export class ConfigNFTManager {
 
     private createNFTElement(nft: SimpleNFT): HTMLElement {
         const container = document.createElement('div');
-        container.className = 'w-[66px] h-[66px] border-2 border-white rounded-lg relative overflow-hidden';
+        container.className = UI.CLASSES.NFT_GRID_CELL;;
         container.dataset.contractAddress = nft.contractAddress;
         container.dataset.tokenId = nft.tokenId;
 
@@ -43,7 +43,7 @@ export class ConfigNFTManager {
             img.alt = nft.name;
             img.className = 'w-full h-full object-cover';
             img.onerror = () => {
-                img.src = '/placeholder-image.png';
+                img.src = UI.IMAGES.PLACEHOLDER;
             };
             container.appendChild(img);
         }
@@ -86,20 +86,18 @@ export class ConfigNFTManager {
         gridContainer.innerHTML = '';
 
         // Create row containers (6 rows, 2 NFTs each)
-        for (let i = 0; i < 6; i++) {
+        for (let i = 0; i < INVENTORY.NFT_GRID.ROWS; i++) {
             const rowDiv = document.createElement('div');
-            rowDiv.className = 'flex gap-[25px]';
+            rowDiv.className = `flex gap-[${INVENTORY.NFT_GRID.GAP}px]`;
 
             // Add two NFT slots per row
-            for (let j = 0; j < 2; j++) {
-                const nftIndex = i * 2 + j;
+            for (let j = 0; j < INVENTORY.NFT_GRID.COLS; j++) {
+                const nftIndex = i * INVENTORY.NFT_GRID.COLS + j;
                 if (nftIndex < this.nfts.length) {
-                    // Add NFT if we have one
                     rowDiv.appendChild(this.createNFTElement(this.nfts[nftIndex]));
                 } else {
-                    // Add empty slot
                     const emptySlot = document.createElement('div');
-                    emptySlot.className = 'w-[66px] h-[66px] border-2 border-white rounded-lg';
+                    emptySlot.className = UI.CLASSES.NFT_GRID_CELL;
                     rowDiv.appendChild(emptySlot);
                 }
             }

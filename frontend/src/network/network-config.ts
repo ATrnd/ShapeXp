@@ -1,8 +1,9 @@
+import { NETWORK } from '../constants';
+
 export const NETWORKS = {
     SHAPE_SEPOLIA: {
-        rpcUrl: 'https://shape-sepolia.g.alchemy.com/v2/',
-        name: 'Shape Sepolia',
-        chainId: 11011
+        rpcUrl: NETWORK.SHAPE_SEPOLIA.RPC_URL,
+        name: NETWORK.SHAPE_SEPOLIA.NAME,
+        chainId: NETWORK.SHAPE_SEPOLIA.CHAIN_ID
     }
 } as const;
-
