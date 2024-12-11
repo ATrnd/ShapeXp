@@ -20,6 +20,11 @@ export class WalletConnection {
 
     private async setupMintButton() {
         const mintButton = document.getElementById('ShapeXpMintButton') as HTMLButtonElement;
+        const configButton = document.getElementById('ShapeXpConfigButton') as HTMLButtonElement;
+        const noticeSection = document.getElementById('ShapeXpNoticeSection');
+        const titleSection = document.getElementById('ShapeXpTitleSection');
+        const logManager = LogManager.getInstance();
+
         if (!mintButton) {
             console.log('Mint button not found');
             return;
@@ -36,6 +41,9 @@ export class WalletConnection {
                 mintButton.disabled = true;
                 mintButton.textContent = 'Minting...';
 
+                // Show minting state
+                logManager.showMintStarting();
+
                 const tx = await mintShapeXpNFT();
                 console.log('Mint transaction sent:', tx.hash);
 
@@ -43,25 +51,105 @@ export class WalletConnection {
                 await tx.wait();
                 console.log('Mint transaction confirmed!');
 
-                // Check NFT ownership again after minting
+                // Show success state
+                logManager.showMintCompleted();
+
+                // Check NFT ownership after minting
                 const hasNFT = await checkShapeXpNFTOwnership();
 
-                // Update UI based on successful mint
                 if (hasNFT) {
-                    mintButton.style.display = 'none';
-                    const nftMessage = document.querySelector('.orbitron-regular.text-lg');
-                    if (nftMessage) {
-                        nftMessage.textContent = 'You now have access to all ShapeXP features!';
+                    try {
+                        // Fetch and update global experience
+                        const { formattedExperience } = await getGlobalExperience();
+                        if (titleSection) {
+                            titleSection.textContent = `xp available :: ${formattedExperience}`;
+                        }
+
+                        // Update UI elements
+                        mintButton.style.display = 'none';
+                        if (configButton) {
+                            configButton.style.display = 'block';
+                        }
+                        if (noticeSection) {
+                            noticeSection.style.display = 'none';
+                        }
+
+                        // Initialize experience manager and config manager if needed
+                        if (!this.worldExperienceManager) {
+                            this.worldExperienceManager = new worldExperienceManager(
+                                () => this.updateExperienceDisplay()
+                            );
+                        }
+
+                        if (!this.configManager) {
+                            this.configManager = new ConfigManager();
+                        }
+
+                    } catch (error) {
+                        console.log('Error updating experience display:', error);
                     }
                 }
 
             } catch (error: any) {
                 console.log('Minting error:', error.message || 'Failed to mint');
+                logManager.showMintFailed(error.message);
                 mintButton.disabled = false;
                 mintButton.textContent = 'Claim ShapeXP';
             }
         });
     }
+
+
+    // private async setupMintButton() {
+    //     const mintButton = document.getElementById('ShapeXpMintButton') as HTMLButtonElement;
+    //     if (!mintButton) {
+    //         console.log('Mint button not found');
+    //         return;
+    //     }
+
+    //     mintButton.addEventListener('click', async () => {
+    //         try {
+    //             if (!window.ethereum) {
+    //                 console.log('MetaMask not installed');
+    //                 return;
+    //             }
+
+    //             console.log('Starting mint process...');
+    //             mintButton.disabled = true;
+    //             mintButton.textContent = 'Minting...';
+
+    //             // Show minting state
+    //             this.logManager.showMintStarting();
+
+    //             const tx = await mintShapeXpNFT();
+    //             console.log('Mint transaction sent:', tx.hash);
+
+    //             console.log('Waiting for transaction confirmation...');
+    //             await tx.wait();
+    //             console.log('Mint transaction confirmed!');
+
+    //             // Show success state
+    //             this.logManager.showMintCompleted();
+
+    //             // Check NFT ownership again after minting
+    //             const hasNFT = await checkShapeXpNFTOwnership();
+
+    //             // Update UI based on successful mint
+    //             if (hasNFT) {
+    //                 mintButton.style.display = 'none';
+    //                 const nftMessage = document.querySelector('.orbitron-regular.text-lg');
+    //                 if (nftMessage) {
+    //                     nftMessage.textContent = 'You now have access to all ShapeXP features!';
+    //                 }
+    //             }
+
+    //         } catch (error: any) {
+    //             console.log('Minting error:', error.message || 'Failed to mint');
+    //             mintButton.disabled = false;
+    //             mintButton.textContent = 'Claim ShapeXP';
+    //         }
+    //     });
+    // }
 
     private async checkExistingConnection() {
         try {
@@ -165,40 +253,30 @@ export class WalletConnection {
     }
 
     private async transitionToAccess(hasNFT: boolean) {
+
         const landingPage = document.getElementById('landing-page');
         const accessPage = document.getElementById('access-page');
         const titleSection = document.getElementById('ShapeXpTitleSection');
+        const mintButton = document.getElementById('ShapeXpMintButton');
+        const configButton = document.getElementById('ShapeXpConfigButton');
         const noticeSection = document.getElementById('ShapeXpNoticeSection');
-        const ShapeXpMintButton = document.getElementById('ShapeXpMintButton');
-        const ShapeXpConfigButton = document.getElementById('ShapeXpConfigButton');
 
+        // Transition from landing to access page
         landingPage?.classList.remove('active');
         accessPage?.classList.add('active');
-        console.log(titleSection);
 
-        if(!hasNFT && ShapeXpConfigButton) {
-            ShapeXpConfigButton.style.display = 'none';
-        }
-
-        if (hasNFT && titleSection && ShapeXpMintButton) {
+        if (hasNFT) {
+            // User has ShapeXP NFT
             try {
-
+                // Update experience display
                 await this.updateExperienceDisplay();
 
-                console.log('Fetching global experience...');
-                const { formattedExperience } = await getGlobalExperience();
-                titleSection.textContent = `xp available :: ${formattedExperience}`;
-                console.log('Global experience updated:', formattedExperience);
+                // Show config button, hide others
+                if (configButton) configButton.style.display = 'block';
+                if (mintButton) mintButton.style.display = 'none';
+                if (noticeSection) noticeSection.style.display = 'none';
 
-                if(ShapeXpConfigButton) {
-                    ShapeXpConfigButton.style.display = 'block';
-                }
-
-                if (noticeSection && ShapeXpMintButton) {
-                    noticeSection.style.display = 'none';
-                    ShapeXpMintButton.style.display = 'none';
-                }
-
+                // Initialize managers
                 if (!this.configManager) {
                     this.configManager = new ConfigManager();
                 }
@@ -208,10 +286,71 @@ export class WalletConnection {
                         () => this.updateExperienceDisplay()
                     );
                 }
-
             } catch (error) {
-                console.log('Error fetching global experience:', error);
+                console.log('Error initializing ShapeXP features:', error);
             }
+        } else {
+            // User doesn't have ShapeXP NFT
+            console.log('User does not have ShapeXP NFT');
+
+            // Reset experience display
+            if (titleSection) titleSection.textContent = 'xp available :: 0';
+
+            // Show mint button and notice, hide config button
+            if (mintButton) mintButton.style.display = 'block';
+            if (configButton) configButton.style.display = 'none';
+            if (noticeSection) noticeSection.style.display = 'block';
         }
     }
+
+    // private async transitionToAccess(hasNFT: boolean) {
+    //     const landingPage = document.getElementById('landing-page');
+    //     const accessPage = document.getElementById('access-page');
+    //     const titleSection = document.getElementById('ShapeXpTitleSection');
+    //     const noticeSection = document.getElementById('ShapeXpNoticeSection');
+    //     const ShapeXpMintButton = document.getElementById('ShapeXpMintButton');
+    //     const ShapeXpConfigButton = document.getElementById('ShapeXpConfigButton');
+
+    //     landingPage?.classList.remove('active');
+    //     accessPage?.classList.add('active');
+    //     console.log(titleSection);
+
+    //     if(!hasNFT && ShapeXpConfigButton) {
+    //         ShapeXpConfigButton.style.display = 'none';
+    //     }
+
+    //     if (hasNFT && titleSection && ShapeXpMintButton) {
+    //         try {
+
+    //             await this.updateExperienceDisplay();
+
+    //             console.log('Fetching global experience...');
+    //             const { formattedExperience } = await getGlobalExperience();
+    //             titleSection.textContent = `xp available :: ${formattedExperience}`;
+    //             console.log('Global experience updated:', formattedExperience);
+
+    //             if(ShapeXpConfigButton) {
+    //                 ShapeXpConfigButton.style.display = 'block';
+    //             }
+
+    //             if (noticeSection && ShapeXpMintButton) {
+    //                 noticeSection.style.display = 'none';
+    //                 ShapeXpMintButton.style.display = 'none';
+    //             }
+
+    //             if (!this.configManager) {
+    //                 this.configManager = new ConfigManager();
+    //             }
+
+    //             if (!this.worldExperienceManager) {
+    //                 this.worldExperienceManager = new worldExperienceManager(
+    //                     () => this.updateExperienceDisplay()
+    //                 );
+    //             }
+
+    //         } catch (error) {
+    //             console.log('Error fetching global experience:', error);
+    //         }
+    //     }
+    // }
 }

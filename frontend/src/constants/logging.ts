@@ -5,6 +5,11 @@ export const LOGS = {
         DISCONNECTED: 'Disconnected',
         CONNECTING: 'Connecting...',
 
+        // shapexp-related messages
+        MINT_STARTING: 'Minting ShapeXp...',
+        MINT_COMPLETED: 'ShapeXp minting completed!',
+        MINT_FAILED: 'Failed to mint ShapeXp',
+
         // Experience-related messages
         EXPERIENCE_ADDING: 'Adding experience...',
         EXPERIENCE_ADDED: 'Experience added successfully!',
