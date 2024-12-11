@@ -55,23 +55,23 @@ export class AppState {
     }
 
     public updateNFTStatus(hasNFT: boolean) {
-        console.log('State: Updating NFT status:', hasNFT);
+        // console.log('State: Updating NFT status:', hasNFT);
         this._state.wallet.hasNFT = hasNFT;
-        console.log('Current state after update:', this._state);
+        // console.log('Current state after update:', this._state);
         this.refreshNFTUI();
     }
 
     private refreshNFTUI() {
-        console.log('Refreshing NFT UI with state:', this._state.wallet);
+        // console.log('Refreshing NFT UI with state:', this._state.wallet);
         const mintButton = document.getElementById('ShapeXpMintButton');
         const configButton = document.getElementById('ShapeXpConfigButton');
         const noticeSection = document.getElementById('ShapeXpNoticeSection');
 
-        console.log('Found UI elements:', {
-            mintButton: !!mintButton,
-            configButton: !!configButton,
-            noticeSection: !!noticeSection
-        });
+        // console.log('Found UI elements:', {
+        //     mintButton: !!mintButton,
+        //     configButton: !!configButton,
+        //     noticeSection: !!noticeSection
+        // });
 
         if (this._state.wallet.hasNFT) {
             if (mintButton) mintButton.style.display = 'none';

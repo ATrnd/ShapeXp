@@ -1,7 +1,6 @@
 // src/main.ts
 import { AppState } from './state/state-store';
 import { WalletConnection } from './features/wallet/connection';
-import { ShapeXpManager } from './features/nft/shapeXp-manager';
 import './style.css';
 
 // Add type declaration for ethereum
