@@ -149,7 +149,7 @@ export class ConfigInventoryManager {
                     slot.innerHTML = inventorySlot.metadata?.imageUrl ?
                         `<img src="${inventorySlot.metadata.imageUrl}"
                               alt="${inventorySlot.metadata.name || 'NFT'}"
-                              class="w-full h-full object-cover">` : '';
+                              class="w-full h-full object-cover rounded-lg">` : '';
 
                     // Update XP
                     xpDisplay.textContent = `shapexp:${inventorySlot.experience || '0'}`;
