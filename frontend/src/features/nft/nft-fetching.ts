@@ -1,6 +1,7 @@
 import { getCurrentAddress } from '../../utils/provider';
 import { NETWORKS } from '../../network/network-config';
 import { convertTokenId } from '../../utils/token-utils';
+import { UI } from '../../constants/index';
 
 /**
  * Interface for minimal NFT data
@@ -11,6 +12,12 @@ export interface SimpleNFT {
     name: string;
     imageUrl: string;
 }
+
+export const NFT_CONTAINER_CLASSES = {
+    BASE: 'w-[66px] h-[66px] border-2 border-white rounded-lg',
+    INTERACTIVE: 'hover:scale-105 hover:opacity-90 transition-transform transition-opacity duration-200',
+    IMAGE: 'w-full h-full object-cover rounded-lg'
+} as const;
 
 /**
  * Fetches all NFTs owned by the connected wallet
@@ -69,27 +76,23 @@ export function filterNFTs(nfts: SimpleNFT[], excludeAddresses: string[]): Simpl
 }
 
 export function createNFTElement(nft: SimpleNFT): HTMLElement {
-    const div = document.createElement('div');
-    div.className = 'nft-item';
+    const container = document.createElement('div');
+    // Combine base classes with interactive classes for containers with NFTs
+    container.className = `${UI.CLASSES.NFT_GRID.CELL.BASE} ${UI.CLASSES.NFT_GRID.CELL.INTERACTIVE}`;
 
-    // Add all necessary data attributes
-    div.dataset.contractAddress = nft.contractAddress;
-    div.dataset.tokenId = nft.tokenId;
-    div.dataset.convertedTokenId = convertTokenId(nft.tokenId);
+    container.dataset.contractAddress = nft.contractAddress;
+    container.dataset.tokenId = nft.tokenId;
 
-    // Create HTML content with add to inventory button
-    div.innerHTML = `
-        <img
-            src="${nft.imageUrl}"
-            alt="${nft.name}"
-            class="nft-image"
-            onerror="this.src='/placeholder-image.png'"
-        />
-        <p class="nft-name">${nft.name}</p>
-        <button class="add-to-inventory-btn">Add to Inventory</button>
-        <p class="add-status"></p>
-    `;
+    if (nft.imageUrl) {
+        const img = document.createElement('img');
+        img.src = nft.imageUrl;
+        img.alt = nft.name;
+        img.className = UI.CLASSES.NFT_GRID.CELL.IMAGE;
+        img.onerror = () => {
+            img.src = UI.IMAGES.PLACEHOLDER;
+        };
+        container.appendChild(img);
+    }
 
-    return div;
+    return container;
 }
-

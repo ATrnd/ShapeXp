@@ -2,6 +2,7 @@ import { fetchInventory } from './inventory-management';
 import { addNFTExperience } from '../nft/nft-experience-addition';
 import { getGlobalExperience } from '../experience/experience-tracking';
 import { removeNFTFromInventory } from '../nft/nft-inventory-removal';
+import { LogManager } from '../../utils/log-manager';
 
 interface InventorySlot {
     nftContract: string;
@@ -17,10 +18,13 @@ interface InventorySlot {
 export class ConfigInventoryManager {
     private readonly SLOT_COUNT = 3;
     private slots: InventorySlot[] = [];
+    private logManager: LogManager;
 
     constructor() {
+        this.logManager = LogManager.getInstance();
         this.initializeInventory();
         this.setupExperienceControls();
+
     }
 
     private async initializeInventory() {
@@ -68,14 +72,19 @@ export class ConfigInventoryManager {
         try {
             console.log('Removing NFT:', { contractAddress, tokenId });
 
+            // Show removing state
+            this.logManager.showNFTRemoving();
+
             const result = await removeNFTFromInventory(contractAddress, tokenId);
 
             if (result.success) {
                 console.log('NFT removed successfully');
+                this.logManager.showNFTRemoved();
                 // Refresh inventory to update UI
                 await this.refreshInventory();
             } else {
                 console.log('Failed to remove NFT:', result.error);
+                this.logManager.showNFTRemoveFailed(result.error);
             }
         } catch (error) {
             console.log('Error removing NFT:', error);
@@ -86,16 +95,21 @@ export class ConfigInventoryManager {
         try {
             console.log('Adding experience to NFT:', { contractAddress, tokenId });
 
+            // Show adding state
+            this.logManager.showNFTExperienceAdding();
+
             const result = await addNFTExperience(contractAddress, tokenId);
 
             if (result.success) {
 
                 console.log('Experience added successfully');
+                this.logManager.showNFTExperienceAdded();
                 await this.refreshInventory();
                 await this.updateGlobalExperience();
 
             } else {
                 console.log('Failed to add experience:', result.error);
+                this.logManager.showNFTExperienceFailed(result.error);
             }
 
         } catch (error) {

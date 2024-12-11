@@ -1,4 +1,4 @@
-import { fetchUserNFTs, filterNFTs, SimpleNFT } from '../nft/nft-fetching';
+import { fetchUserNFTs, filterNFTs, SimpleNFT, NFT_CONTAINER_CLASSES} from '../nft/nft-fetching';
 import { SHAPE_XP_NFT_ADDRESS } from '../../contracts/addresses';
 import { convertTokenId } from '../../utils/token-utils';
 import { addNFTToInventory } from '../inventory/inventory-actions';
@@ -33,27 +33,53 @@ export class ConfigNFTManager {
         }
     }
 
+    // private createNFTElement(nft: SimpleNFT): HTMLElement {
+    //     const container = document.createElement('div');
+    //     container.className = UI.CLASSES.NFT_GRID_CELL;;
+    //     container.dataset.contractAddress = nft.contractAddress;
+    //     container.dataset.tokenId = nft.tokenId;
+
+    //     // Add image if available
+    //     if (nft.imageUrl) {
+    //         const img = document.createElement('img');
+    //         img.src = nft.imageUrl;
+    //         img.alt = nft.name;
+    //         img.className = 'w-full h-full object-cover';
+    //         img.onerror = () => {
+    //             img.src = UI.IMAGES.PLACEHOLDER;
+    //         };
+    //         container.appendChild(img);
+    //     }
+
+    //     container.addEventListener('click', async () => {
+    //         await this.handleNFTSelection(nft);
+    //     });
+
+    //     return container;
+    // }
+
     private createNFTElement(nft: SimpleNFT): HTMLElement {
         const container = document.createElement('div');
-        container.className = UI.CLASSES.NFT_GRID_CELL;;
+        // Combine base classes with interactive classes for containers with NFTs
+        container.className = `${UI.CLASSES.NFT_GRID.CELL.BASE} ${UI.CLASSES.NFT_GRID.CELL.INTERACTIVE}`;
+
         container.dataset.contractAddress = nft.contractAddress;
         container.dataset.tokenId = nft.tokenId;
 
-        // Add image if available
+        container.addEventListener('click', async () => {
+            await this.handleNFTSelection(nft);
+        });
+
         if (nft.imageUrl) {
             const img = document.createElement('img');
             img.src = nft.imageUrl;
             img.alt = nft.name;
-            img.className = 'w-full h-full object-cover';
+            img.className = UI.CLASSES.NFT_GRID.CELL.IMAGE;
             img.onerror = () => {
                 img.src = UI.IMAGES.PLACEHOLDER;
             };
             container.appendChild(img);
         }
-
-        container.addEventListener('click', async () => {
-            await this.handleNFTSelection(nft);
-        });
 
         return container;
     }
@@ -89,22 +115,19 @@ export class ConfigNFTManager {
         const gridContainer = document.getElementById(this.gridContainerId);
         if (!gridContainer) return;
 
-        // Clear existing content
         gridContainer.innerHTML = '';
 
-        // Create row containers (6 rows, 2 NFTs each)
         for (let i = 0; i < INVENTORY.NFT_GRID.ROWS; i++) {
             const rowDiv = document.createElement('div');
             rowDiv.className = `flex gap-[${INVENTORY.NFT_GRID.GAP}px]`;
 
-            // Add two NFT slots per row
             for (let j = 0; j < INVENTORY.NFT_GRID.COLS; j++) {
                 const nftIndex = i * INVENTORY.NFT_GRID.COLS + j;
                 if (nftIndex < this.nfts.length) {
                     rowDiv.appendChild(this.createNFTElement(this.nfts[nftIndex]));
                 } else {
                     const emptySlot = document.createElement('div');
-                    emptySlot.className = UI.CLASSES.NFT_GRID_CELL;
+                    emptySlot.className = UI.CLASSES.NFT_GRID.CELL.BASE; // Only base class for empty slots
                     rowDiv.appendChild(emptySlot);
                 }
             }
@@ -112,4 +135,31 @@ export class ConfigNFTManager {
             gridContainer.appendChild(rowDiv);
         }
     }
+    // private async renderNFTGrid() {
+    //     const gridContainer = document.getElementById(this.gridContainerId);
+    //     if (!gridContainer) return;
+
+    //     // Clear existing content
+    //     gridContainer.innerHTML = '';
+
+    //     // Create row containers (6 rows, 2 NFTs each)
+    //     for (let i = 0; i < INVENTORY.NFT_GRID.ROWS; i++) {
+    //         const rowDiv = document.createElement('div');
+    //         rowDiv.className = `flex gap-[${INVENTORY.NFT_GRID.GAP}px]`;
+
+    //         // Add two NFT slots per row
+    //         for (let j = 0; j < INVENTORY.NFT_GRID.COLS; j++) {
+    //             const nftIndex = i * INVENTORY.NFT_GRID.COLS + j;
+    //             if (nftIndex < this.nfts.length) {
+    //                 rowDiv.appendChild(this.createNFTElement(this.nfts[nftIndex]));
+    //             } else {
+    //                 const emptySlot = document.createElement('div');
+    //                 emptySlot.className = UI.CLASSES.NFT_GRID_CELL;
+    //                 rowDiv.appendChild(emptySlot);
+    //             }
+    //         }
+
+    //         gridContainer.appendChild(rowDiv);
+    //     }
+    // }
 }

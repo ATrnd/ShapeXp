@@ -131,4 +131,44 @@ export class LogManager {
         this.setClearTimer(10000); // Clear after 10 seconds
     }
 
+    public showNFTExperienceAdding() {
+        console.log('Showing NFT experience adding state');
+        this.updateLogMessage(LOGS.MESSAGES.NFT_EXP_ADDING, true);
+    }
+
+    public showNFTExperienceAdded() {
+        console.log('Showing NFT experience added state');
+        this.updateLogMessage(LOGS.MESSAGES.NFT_EXP_ADDED, false);
+        this.setClearTimer(3000); // Clear after 3 seconds
+    }
+
+    public showNFTExperienceFailed(error?: string) {
+        console.log('Showing NFT experience failed state', { error });
+        const message = error ?
+            `${LOGS.MESSAGES.NFT_EXP_FAILED}: ${error}` :
+            LOGS.MESSAGES.NFT_EXP_FAILED;
+        this.updateLogMessage(message, false);
+        this.setClearTimer(10000); // Clear after 10 seconds
+    }
+
+    public showNFTRemoving() {
+        console.log('Showing NFT removing state');
+        this.updateLogMessage(LOGS.MESSAGES.NFT_REMOVING, true);
+    }
+
+    public showNFTRemoved() {
+        console.log('Showing NFT removed state');
+        this.updateLogMessage(LOGS.MESSAGES.NFT_REMOVED, false);
+        this.setClearTimer(3000); // Clear after 3 seconds
+    }
+
+    public showNFTRemoveFailed(error?: string) {
+        console.log('Showing NFT remove failed state', { error });
+        const message = error ?
+            `${LOGS.MESSAGES.NFT_REMOVE_FAILED}: ${error}` :
+            LOGS.MESSAGES.NFT_REMOVE_FAILED;
+        this.updateLogMessage(message, false);
+        this.setClearTimer(10000); // Clear after 10 seconds
+    }
+
 }
