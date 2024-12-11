@@ -3,3 +3,4 @@ export * from './experience';
 export * from './inventory';
 export * from './ui';
 export * from './network';
+export * from './logging';

@@ -72,13 +72,34 @@ export class ConfigManager {
 
         if (!this.nftManager) {
             this.nftManager = new ConfigNFTManager(this);
+            await this.nftManager.refreshNFTGrid();
         }
+
         if (!this.inventoryManager) {
             this.inventoryManager = new ConfigInventoryManager();
         }
 
         await this.updateXPDisplay();
     }
+
+
+    // private async showConfigPage() {
+    //     console.log('Showing config page');
+    //     const accessPage = document.getElementById('access-page');
+    //     const configPage = document.getElementById('config-page');
+
+    //     accessPage?.classList.remove('active');
+    //     configPage?.classList.add('active');
+
+    //     if (!this.nftManager) {
+    //         this.nftManager = new ConfigNFTManager(this);
+    //     }
+    //     if (!this.inventoryManager) {
+    //         this.inventoryManager = new ConfigInventoryManager();
+    //     }
+
+    //     await this.updateXPDisplay();
+    // }
 
     private hideConfigPage() {
         console.log('Hiding config page');

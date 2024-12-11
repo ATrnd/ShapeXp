@@ -59,3 +59,17 @@
     background-color: rgba(239, 68, 68, 0.2);
     border: 1px solid rgb(239, 68, 68);
 }
+
+/* Hide all pages by default */
+#landing-page,
+#access-page,
+#config-page {
+    display: none;
+}
+
+/* Show only the active page */
+#landing-page.active,
+#access-page.active,
+#config-page.active {
+    display: block;
+}

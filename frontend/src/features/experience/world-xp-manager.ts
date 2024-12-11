@@ -2,6 +2,7 @@ import { ExperienceAmount } from '../../contracts/abis';
 import { addGlobalExperience } from './add-experience';
 import { EXPERIENCE } from '../../constants';
 import { LogManager } from '../../utils/log-manager';
+import { LogType, LOGS } from '../../constants';
 
 export class worldExperienceManager {
     private worldButtons: Record<string, { id: string; expType: ExperienceAmount }>;
@@ -30,7 +31,7 @@ export class worldExperienceManager {
                         button.disabled = true;
 
                         // Show adding experience state
-                        this.logManager.showExperienceAdding();
+                        this.logManager.showStarting(LogType.EXPERIENCE);
 
                         const tx = await addGlobalExperience(expType);
                         console.log('Experience transaction sent:', tx.hash);
@@ -39,7 +40,7 @@ export class worldExperienceManager {
                         console.log('Experience transaction confirmed!');
 
                         // Show success state
-                        this.logManager.showExperienceAdded();
+                        this.logManager.showSuccess(LogType.EXPERIENCE);
 
                         await this.onExperienceUpdate();
 
@@ -47,7 +48,7 @@ export class worldExperienceManager {
                         console.log('Error adding experience:', error.message);
 
                         // Show error state
-                        this.logManager.showExperienceFailed(error.message);
+                        this.logManager.showError(LogType.EXPERIENCE, error.message);
 
                     } finally {
                         button.disabled = false;
