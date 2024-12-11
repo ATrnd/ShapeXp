@@ -1,16 +1,12 @@
-// src/features/nft/nft-manager.ts
+// src/features/nft/shapeXp-manager.ts
 import { AppState } from '../../state/state-store';
 import { checkShapeXpNFTOwnership } from './validation';
-import { LogManager } from '../../utils/log-manager';
-import { LogType } from '../../constants/logging';
 
 export class ShapeXpManager {
     private appState: AppState;
-    private logManager: LogManager;
 
     constructor() {
         this.appState = AppState.getInstance();
-        this.logManager = LogManager.getInstance();
         this.initializeMintButton();
     }
 
