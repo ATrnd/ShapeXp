@@ -4,11 +4,14 @@ import { mintShapeXpNFT } from '../nft/minting';
 import { getGlobalExperience } from '../experience/experience-tracking';
 import { worldExperienceManager } from '../experience/world-xp-manager';
 import { ConfigManager } from '../config/ConfigManager';
+import { LogManager } from '../../utils/log-manager';
 
 export class WalletConnection {
+    private logManager: LogManager;
     private worldExperienceManager: worldExperienceManager | null = null;
     private configManager: ConfigManager | null = null;
     constructor() {
+        this.logManager = LogManager.getInstance();
         this.initializeConnection();
         this.checkExistingConnection();
         this.setupEventListeners();
@@ -99,6 +102,7 @@ export class WalletConnection {
                     this.handleDisconnect();
                 } else {
                     console.log('Account changed:', accounts[0]);
+                    this.logManager.showConnected();
                     const hasNFT = await checkShapeXpNFTOwnership();
                     this.transitionToAccess(hasNFT);
                 }
@@ -120,6 +124,8 @@ export class WalletConnection {
         accessPage?.classList.remove('active');
         configPage?.classList.remove('active');
         landingPage?.classList.add('active');
+
+        this.logManager.showDisconnected();
     }
 
     private async initializeConnection() {
@@ -135,9 +141,11 @@ export class WalletConnection {
                 const hasNFT = await checkShapeXpNFTOwnership();
                 console.log('NFT ownership status:', hasNFT);
 
+                this.logManager.showConnected();
                 this.transitionToAccess(hasNFT);
             } catch (error: any) {
                 console.log('Connection error:', error.message || 'Failed to connect');
+                this.logManager.showDisconnected();
             }
         });
     }

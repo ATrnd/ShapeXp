@@ -4,15 +4,18 @@ import { convertTokenId } from '../../utils/token-utils';
 import { addNFTToInventory } from '../inventory/inventory-actions';
 import { ConfigManager } from './ConfigManager';
 import { UI, INVENTORY } from '../../constants';
+import { LogManager } from '../../utils/log-manager';
 
 export class ConfigNFTManager {
     private readonly gridContainerId = 'configNFTGrid';
     private nfts: SimpleNFT[] = [];
     private configManager: ConfigManager;
+    private logManager: LogManager;
 
     constructor(configManager: ConfigManager) {
         this.configManager = configManager;
         this.initializeNFTGrid();
+        this.logManager = LogManager.getInstance();
     }
 
     public async refreshNFTGrid() {
@@ -63,14 +66,18 @@ export class ConfigNFTManager {
             const convertedTokenId = convertTokenId(nft.tokenId);
             console.log('Converted token ID:', convertedTokenId);
 
+            this.logManager.showNFTAdding();
+
             // Try to add NFT to inventory
             const result = await addNFTToInventory(nft.contractAddress, convertedTokenId);
 
             if (result.success) {
                 console.log('Successfully added NFT to inventory');
+                this.logManager.showNFTAdded();
                 await this.configManager.refreshAll();
             } else {
                 console.log('Failed to add NFT to inventory:', result.error);
+                this.logManager.showNFTFailed(result.error);
             }
 
         } catch (error) {
