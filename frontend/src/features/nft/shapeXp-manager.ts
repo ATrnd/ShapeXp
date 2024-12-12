@@ -3,15 +3,18 @@ import { AppState } from '../../state/state-store';
 import { checkShapeXpNFTOwnership } from './validation';
 import { getShapeXpNFTContract } from '../../contracts/contract-instances';
 import { LogManager } from '../../utils/log-manager';
+import { ExperienceManager } from '../../state/state-store';
 
 export class ShapeXpManager {
     private appState: AppState;
     private logManager: LogManager;
+    private experienceManager: ExperienceManager;
     private isMinting: boolean = false;
 
     constructor() {
         this.appState = AppState.getInstance();
         this.logManager = LogManager.getInstance();
+        this.experienceManager = new ExperienceManager();
         this.initializeMintButton();
     }
 
@@ -58,8 +61,8 @@ export class ShapeXpManager {
             console.log('--- Transaction receipt ---', receipt);
 
             // Update NFT ownership status after successful mint
-            await this.checkShapeXpOwnership();
             this.logManager.updateMintStatus('success');
+            await this.checkShapeXpOwnership();
 
             return tx;
 
@@ -95,6 +98,9 @@ export class ShapeXpManager {
         try {
             const hasNFT = await checkShapeXpNFTOwnership();
             this.appState.updateNFTStatus(hasNFT);
+            if (hasNFT) {
+                await this.experienceManager.checkAndUpdateExperience();
+            }
         } catch (error) {
             console.error('Error in NFT check:', error);
             this.appState.updateNFTStatus(false);

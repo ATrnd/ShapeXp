@@ -1,11 +1,16 @@
 // src/state/state-store.ts
 import { LogManager } from '../utils/log-manager';
+import { getGlobalExperience } from '../features/experience/experience-tracking.ts';
 
 interface AppStateType {
     wallet: {
         connected: boolean;
         address: string;
         hasNFT: boolean;
+        experience?: {
+            value: bigint;
+            formatted: string;
+        };
     };
     ui: {
         currentPage: 'landing' | 'access';
@@ -101,6 +106,56 @@ export class AppState {
         // If we're showing the access page, also refresh NFT UI
         if (this._state.ui.currentPage === 'access') {
             this.refreshNFTUI();
+        }
+    }
+
+    public updateExperience(experience: bigint, formatted: string) {
+        this._state.wallet.experience = {
+            value: experience,
+            formatted: formatted
+        };
+        this.refreshExperienceUI();
+    }
+
+    private refreshExperienceUI() {
+        const titleSection = document.getElementById('ShapeXpTitleSection');
+        if (!titleSection) return;
+
+        if (this._state.wallet.experience) {
+            titleSection.textContent = `shapeXp :: ${this._state.wallet.experience.formatted}`;
+        }
+    }
+
+    public getWalletState() {
+        return {
+            connected: this._state.wallet.connected,
+            hasNFT: this._state.wallet.hasNFT,
+            address: this._state.wallet.address
+        };
+    }
+
+}
+
+export class ExperienceManager {
+    private appState: AppState;
+
+    constructor() {
+        this.appState = AppState.getInstance();
+    }
+
+    public async checkAndUpdateExperience() {
+        try {
+            const walletState = this.appState.getWalletState();
+
+            if (!walletState.connected || !walletState.hasNFT) {
+                return;
+            }
+
+            const { experience, formattedExperience } = await getGlobalExperience();
+            this.appState.updateExperience(experience, formattedExperience);
+
+        } catch (error) {
+            console.error('Failed to fetch experience:', error);
         }
     }
 }
