@@ -49,4 +49,22 @@ export class LogManager {
         }
     }
 
+    public updateExperienceStatus(status: 'start' | 'success' | 'failed', errorMessage?: string) {
+        if (!this.logInfo || !this.logLoading) return;
+
+        switch (status) {
+            case 'start':
+                this.logInfo.textContent = LOGS.MESSAGES[LogType.EXPERIENCE].ADDING;
+                this.logLoading.style.display = 'inline';
+                break;
+            case 'success':
+                this.logInfo.textContent = LOGS.MESSAGES[LogType.EXPERIENCE].ADDED;
+                this.logLoading.style.display = 'none';
+                break;
+            case 'failed':
+                this.logInfo.textContent = errorMessage || LOGS.MESSAGES[LogType.EXPERIENCE].FAILED;
+                this.logLoading.style.display = 'none';
+                break;
+        }
+    }
 }

@@ -1,6 +1,7 @@
 // src/main.ts
 import { AppState } from './state/state-store';
 import { WalletConnection } from './features/wallet/connection';
+import { ExperienceButtonManager } from './features/experience/experience-manager';
 import './style.css';
 
 // Add type declaration for ethereum
@@ -11,8 +12,7 @@ declare global {
 }
 
 document.addEventListener('DOMContentLoaded', () => {
-    // Initialize state first
     AppState.getInstance();
-    // Initialize wallet connection
     new WalletConnection();
+    new ExperienceButtonManager();
 });
