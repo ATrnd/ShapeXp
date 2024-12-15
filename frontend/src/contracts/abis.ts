@@ -1,5 +1,20 @@
+/**
+* @title ShapeXp Smart Contract ABIs
+* @notice Defines Application Binary Interfaces for ShapeXp contracts
+* @dev Contains type-safe ABIs for NFT and Experience contracts
+* @custom:module-hierarchy Core Contract Definitions
+*/
+
 import { Interface } from 'ethers';
 
+/**
+* @notice ShapeXp NFT Contract ABI
+* @dev Core functions for soulbound NFT operations
+* @custom:contract-functions
+* - mint(): Mints new soulbound NFT
+* - name(): Returns token collection name
+* - hasMintedToken(): Checks token ownership
+*/
 export const SHAPE_XP_NFT_ABI = [
    {
         "type": "function",
@@ -42,6 +57,28 @@ export const SHAPE_XP_NFT_ABI = [
     }
 ] as const;
 
+/**
+* @notice ShapeXp Experience Contract ABI
+* @dev Core functions for experience and inventory management
+* @custom:contract-functions
+* - Experience Management:
+*   - addGlobalExperience(): Adds to global XP pool
+*   - getGlobalExperience(): Retrieves global XP amount
+* - NFT Experience:
+*   - addNFTExperience(): Transfers XP to NFT
+*   - getNFTExperience(): Gets NFT-specific XP
+* - Inventory Management:
+*   - addNFTToInventory(): Adds NFT to inventory
+*   - removeNFTFromInventory(): Removes NFT from inventory
+*   - viewInventory(): Lists current inventory
+* - Validation:
+*   - validateNFTOwnership(): Checks NFT ownership
+*   - validateShapeXpNFTOwnership(): Verifies ShapeXp ownership
+* @custom:events
+* - ExperienceAdded: NFT experience gain
+* - GlobalExperienceAdded: Global experience gain
+* - ExperienceCapped: Experience cap reached
+*/
 export const SHAPE_XP_INV_EXP_ABI = [
         {
             "type": "constructor",
@@ -473,10 +510,17 @@ export const SHAPE_XP_INV_EXP_ABI = [
 
 ] as Interface | any[];
 
+/**
+* @notice Experience Amount Enumeration
+* @dev Defines valid experience gain levels
+* @custom:values
+* - LOW: Basic experience gain
+* - MID: Medium experience gain
+* - HIGH: Maximum experience gain
+*/
 export enum ExperienceAmount {
     LOW = 0,
     MID = 1,
     HIGH = 2
 }
-
 
