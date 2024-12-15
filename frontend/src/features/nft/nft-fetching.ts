@@ -1,6 +1,21 @@
-// src/features/nft/nft-fetching.ts
+/**
+* @title NFT Data Fetching System
+* @notice Manages NFT metadata retrieval and formatting
+* @dev Handles NFT data fetching from Alchemy API
+* @custom:module-hierarchy Core NFT Data Component
+*/
+
 import { NETWORK } from '../../constants/network';
 
+/**
+* @notice NFT metadata interface
+* @dev Core structure for NFT data representation
+* @custom:fields
+* - name: NFT collection or item name
+* - imageUrl: NFT image URI (IPFS or HTTP)
+* - contractAddress: NFT contract address
+* - tokenId: Unique token identifier
+*/
 export interface NFTMetadata {
     name: string;
     imageUrl: string;
@@ -9,8 +24,18 @@ export interface NFTMetadata {
 }
 
 /**
- * Converts hex token ID to decimal while handling padded formats
- */
+* @notice Converts hexadecimal token IDs to decimal
+* @dev Handles padded and non-padded hex formats
+* @param hexTokenId The hex token ID to convert
+* @return string Decimal token ID
+* @custom:errors
+* - Invalid hex format
+* - Invalid token ID
+* @custom:formats
+* - Handles '0x' prefix
+* - Removes leading zeros
+* - Converts empty to '0'
+*/
 export function convertTokenId(hexTokenId: string): string {
     try {
         const cleanHex = hexTokenId.toLowerCase().replace('0x', '');
@@ -26,6 +51,24 @@ export function convertTokenId(hexTokenId: string): string {
     }
 }
 
+/**
+* @notice Fetches all NFTs owned by an address
+* @dev Retrieves NFT data from Alchemy API
+* @param address The owner's Ethereum address
+* @return Promise<NFTMetadata[]> Array of NFT metadata
+* @custom:requirements
+* - Valid Ethereum address
+* - Active Alchemy API key
+* - Valid network configuration
+* @custom:processing
+* - IPFS URL conversion
+* - Token ID normalization
+* - Image URL formatting
+* @custom:errors
+* - API connection failures
+* - Invalid address format
+* - Rate limiting
+*/
 export async function fetchUserNFTs(address: string): Promise<NFTMetadata[]> {
     try {
         // const baseURL = "https://shape-sepolia.g.alchemy.com/v2/";

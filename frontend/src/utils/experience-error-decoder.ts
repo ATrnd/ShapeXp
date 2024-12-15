@@ -1,7 +1,6 @@
 /**
  * @title Experience Error Decoder
  * @notice Decodes and formats ShapeXp experience system errors
- * @dev Uses ethers.js Interface for error decoding
  */
 
 import { Interface } from 'ethers';

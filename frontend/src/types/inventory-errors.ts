@@ -1,10 +1,33 @@
-// src/types/inventory-errors.ts
+/**
+* @title Inventory Error Type Definitions
+* @notice Defines error types and messages for inventory operations
+* @dev Contains error interfaces, signatures, codes and messages
+* @custom:module-hierarchy Core Inventory Types Component
+*/
+
+/**
+* @notice Inventory error details interface
+* @dev Core structure for inventory operation errors
+* @custom:fields
+* - code: Unique error identifier
+* - message: Human readable error description
+* - details: Optional additional error data
+*/
 export interface InventoryErrorDetails {
     code: string;
     message: string;
     details?: any;
 }
 
+/**
+* @notice Inventory error signature definitions
+* @dev Maps error names to their Solidity signatures
+* @custom:errors
+* - Contract validation errors
+* - Inventory state errors
+* - Ownership validation errors
+* - NFT validation errors
+*/
 export const InventoryErrorSignatures = {
     InvalidERC721Contract: "ShapeXpInvExp__InvalidERC721Contract()",
     InventoryFull: "ShapeXpInvExp__InventoryFull()",
@@ -14,6 +37,16 @@ export const InventoryErrorSignatures = {
     NotNFTOwner: "ShapeXpInvExp__NotNFTOwner()"
 } as const;
 
+/**
+* @notice Inventory error code constants
+* @dev Standardized codes for error identification
+* @custom:categories
+* - Contract validation
+* - State validation
+* - Ownership checks
+* - User actions
+* - System operations
+*/
 export const InventoryErrorCodes = {
     INVALID_CONTRACT: 'INV_INVALID_CONTRACT',
     INVENTORY_FULL: 'INV_FULL',
@@ -28,6 +61,16 @@ export const InventoryErrorCodes = {
     REMOVAL_NFT_NOT_FOUND: 'INV_REM_NFT_NOT_FOUND',
 } as const;
 
+/**
+* @notice Human-readable error messages
+* @dev Maps error types to user-friendly messages
+* @custom:messages
+* - Contract validation messages
+* - State validation messages
+* - Ownership requirement messages
+* - User action messages
+* - System error messages
+*/
 export const InventoryErrorMessages = {
     InvalidERC721Contract: "Invalid ERC721 contract address provided",
     InventoryFull: "Inventory is at maximum capacity (3 slots)",

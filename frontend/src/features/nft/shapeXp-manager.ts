@@ -7,11 +7,11 @@
 
 import { AppState } from '../../state/state-store';
 import { checkShapeXpNFTOwnership } from './validation';
-import { getShapeXpNFTContract } from '../../contracts/contract-instances';
 import { ButtonState } from '../../types/button-states';
-import { ButtonClasses } from '../../state/button-classes';
 import { getGlobalExperience } from '../experience/experience-tracking';
 import { mintShapeXpNFT } from './minting';
+import { ButtonClasses } from '../../state/button-classes';
+import { getShapeXpNFTContract } from '../../contracts/contract-instances';
 
 /**
 * @notice Manages ShapeXp NFT minting and ownership status
@@ -146,7 +146,6 @@ export class ShapeXpManager {
                 const { experience, formattedExperience } = await getGlobalExperience();
                 this.appState.updateExperience(experience, formattedExperience);
                 this.updateExperienceDisplay(formattedExperience);
-                // Add this to ensure mint button shows correct state
                 this.appState.updateMintButtonState(ButtonState.MINTED);
             } else {
                 this.updateExperienceDisplay('0');

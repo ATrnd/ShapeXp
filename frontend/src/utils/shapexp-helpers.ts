@@ -1,3 +1,9 @@
+/**
+ * @title ShapeXp Helper Utilities
+ * @notice High-level interface for ShapeXp contract interactions
+ * @dev Provides abstracted access to ShapeXp NFT and experience system functionality
+ */
+
 import { getShapeXpContract, getShapeXpNFTContract } from '../contracts/contract-instances';
 import { NFTMetadata, fetchUserNFTs } from '../features/nft/nft-fetching';
 import { InventorySlot, InventoryData, fetchInventory } from '../features/nft/inventory';
@@ -7,7 +13,6 @@ import { RemoveFromInventoryResult, removeFromInventory } from '../features/nft/
 import { MintResult, mintShapeXpNFT } from '../features/nft/minting';
 import { ExperienceResult, addGlobalExperience  } from '../features/experience/experience-addition';
 import { ExperienceAmount } from '../contracts/abis';
-
 import { Contract } from 'ethers';
 
 export class ShapeXpHelpers {

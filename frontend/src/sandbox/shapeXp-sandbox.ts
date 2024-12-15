@@ -1,8 +1,8 @@
 /**
-* @title ShapeXp Sandbox API
-* @notice Developer interface for ShapeXp integration and data access
-* @dev Provides global window.ShapeXpAPI object with core functionality
-* @custom:module-hierarchy Integration API Component
+* @title ShapeXp Public Integration API
+* @notice Provides public interface for ShapeXp system integration
+* @dev Exposes ShapeXpAPI in global window object
+* @custom:module-hierarchy Public API Component
 */
 
 import { ShapeXpHelpers } from '../utils/shapexp-helpers';
@@ -13,31 +13,31 @@ import { ExperienceAmount } from '../contracts/abis';
 import { ContractTransactionResponse } from 'ethers';
 
 /**
-* @title ShapeXp Sandbox Interface
-* @notice Core class exposing ShapeXp functionality to external applications
-* @dev Implements window.ShapeXpAPI interface for developer access
-* @custom:interface Global ShapeXpAPI object
+* @title ShapeXp Integration Interface
+* @notice Core class implementing public API functionality
+* @dev Initializes global window.ShapeXpAPI object
+* @custom:api-version 1.0.0
 */
 export class ShapeXpSandbox {
     constructor() {
-        /**
-         * @notice Gets current account's ShapeXp amount
-         * @dev Retrieves formatted experience from AppState
-         * @return Promise<string> Formatted ShapeXp amount
-         * @custom:requires Connected wallet
-         * @custom:example
-         * const xp = await ShapeXpAPI.getShapeXp();
-         * console.log('Current ShapeXp:', xp);
-         */
         window.ShapeXpAPI = {
-            // Get current ShapeXp amount
+
+            /**
+             * @notice Gets current account's ShapeXp amount
+             * @dev Retrieves formatted experience from app state
+             * @return Promise<string> Formatted experience amount
+             * @custom:requires Connected wallet
+             */
             getShapeXp: async () => {
                 const appState = (window as any).appState;
                 return appState.getFormattedExperience();
             },
 
             /**
-             * Mint a new ShapeXp NFT
+             * @notice Mints new ShapeXp NFT
+             * @dev Handles complete minting process
+             * @return Promise<{success: boolean, tx?: ContractTransactionResponse, error?: string}>
+             * @custom:requires No existing ShapeXp NFT
              */
             mintShapeXp: async () => {
                 try {
@@ -62,14 +62,13 @@ export class ShapeXpSandbox {
             },
 
             /**
-             * Add global experience points
-             * @param type - Experience amount type ("LOW", "MID", "HIGH")
-             * @returns Promise with transaction result
-             * @example
-             * const result = await ShapeXpAPI.addGlobalExperience("LOW");
-             * if (result.success) {
-             *   console.log('Experience added:', result.transactionHash);
-             * }
+             * @notice Adds global experience points
+             * @dev Processes experience gain with cooldown check
+             * @param type Experience amount type (LOW, MID, HIGH)
+             * @return Promise with transaction result
+             * @custom:requires
+             * - ShapeXp NFT ownership
+             * - Not in cooldown
              */
             addGlobalExperience: async (type: keyof typeof ExperienceAmount) => {
                 try {
@@ -95,7 +94,20 @@ export class ShapeXpSandbox {
             },
 
             /**
-             * Remove NFT from ShapeXp inventory
+             * @notice Removes NFT from ShapeXp inventory
+             * @dev Handles complete NFT removal process
+             * @param contractAddress The NFT contract address
+             * @param tokenId The NFT token ID
+             * @return Promise<{success: boolean, tx?: ContractTransactionResponse, error?: string}>
+             * @custom:requires
+             * - NFT must be in inventory
+             * - ShapeXp NFT ownership
+             * - User owns the NFT
+             * @custom:example
+             * const result = await ShapeXpAPI.removeNFTFromInventory("0x123...", "1");
+             * if (result.success) {
+             *   console.log('NFT removed:', result.tx?.hash);
+             * }
              */
             removeNFTFromInventory: async (contractAddress: string, tokenId: string) => {
                 try {
@@ -120,7 +132,21 @@ export class ShapeXpSandbox {
             },
 
             /**
-             * Add experience points to a specific NFT
+             * @notice Adds experience points to NFT
+             * @dev Transfers experience from global pool to specific NFT
+             * @param nftContract The NFT contract address
+             * @param tokenId The NFT token ID
+             * @return Promise<{success: boolean, transactionHash?: string, error?: string}>
+             * @custom:requires
+             * - NFT in inventory
+             * - Sufficient global experience
+             * - Not in cooldown
+             * - ShapeXp NFT ownership
+             * @custom:example
+             * const result = await ShapeXpAPI.addNFTExperience("0x123...", "1");
+             * if (result.success) {
+             *   console.log('Experience added:', result.transactionHash);
+             * }
              */
             addNFTExperience: async (nftContract: string, tokenId: string) => {
                 try {
@@ -145,7 +171,19 @@ export class ShapeXpSandbox {
             },
 
             /**
-             * Get experience points for a specific NFT
+             * @notice Retrieves NFT experience amount
+             * @dev Fetches current experience points for specific NFT
+             * @param contractAddress The NFT contract address
+             * @param tokenId The NFT token ID
+             * @return Promise<{success: boolean, experience?: string, error?: string}>
+             * @custom:requires
+             * - NFT must exist
+             * - NFT in inventory
+             * @custom:example
+             * const result = await ShapeXpAPI.getNFTExperience("0x123...", "1");
+             * if (result.success) {
+             *   console.log('NFT experience:', result.experience);
+             * }
              */
             getNFTExperience: async (contractAddress: string, tokenId: string) => {
                 try {
@@ -163,7 +201,21 @@ export class ShapeXpSandbox {
             },
 
             /**
-             * Add NFT to ShapeXp inventory
+             * @notice Adds NFT to ShapeXp inventory
+             * @dev Handles complete inventory addition process
+             * @param contractAddress The NFT contract address
+             * @param tokenId The NFT token ID
+             * @return Promise<{success: boolean, tx?: ContractTransactionResponse, error?: string}>
+             * @custom:requires
+             * - Available inventory slot
+             * - ShapeXp NFT ownership
+             * - User owns the NFT
+             * - NFT not already in inventory
+             * @custom:example
+             * const result = await ShapeXpAPI.addNFTToInventory("0x123...", "1");
+             * if (result.success) {
+             *   console.log('NFT added:', result.tx?.hash);
+             * }
              */
             addNFTToInventory: async (contractAddress: string, tokenId: string) => {
                 try {
@@ -188,7 +240,19 @@ export class ShapeXpSandbox {
             },
 
             /**
-             * Get inventory for current address or specified address
+             * @notice Retrieves current inventory state
+             * @dev Fetches complete inventory data for an address
+             * @param address Optional Ethereum address (uses connected wallet if omitted)
+             * @return Promise<{success: boolean, inventory?: InventoryData, error?: string}>
+             * @custom:returns
+             * - success: Operation status
+             * - inventory: Current inventory state if successful
+             * - error: Error message if failed
+             * @custom:example
+             * const result = await ShapeXpAPI.getInventory();
+             * if (result.success) {
+             *   console.log('Inventory slots:', result.inventory.slots);
+             * }
              */
             getInventory: async (address?: string) => {
                 try {
@@ -207,7 +271,10 @@ export class ShapeXpSandbox {
             },
 
             /**
-             * Get all NFTs for current address or specified address
+             * @notice Retrieves all NFTs for an address
+             * @dev Fetches NFT data from Alchemy API
+             * @param address Optional address (uses connected wallet if omitted)
+             * @return Promise<{success: boolean, nfts?: NFTMetadata[]}>
              */
             getNFTs: async (address?: string) => {
                 try {
@@ -225,16 +292,12 @@ export class ShapeXpSandbox {
                 }
             },
 
-           /**
-            * @notice Subscribes to ShapeXp amount changes
-            * @dev Sets up event listener for shapexp-update events
-            * @param callback Function to execute when ShapeXp changes
-            * @custom:events shapexp-update
-            * @custom:example
-            * ShapeXpAPI.onShapeXpChange((amount) => {
-            *   console.log('ShapeXp updated:', amount);
-            * });
-            */
+            /**
+             * @notice Subscribes to ShapeXp amount changes
+             * @dev Sets up event listener for experience updates
+             * @param callback Function executed on experience change
+             * @custom:events shapexp-update
+             */
             onShapeXpChange: (callback: (amount: string) => void) => {
                 document.addEventListener('shapexp-update', (e: any) => {
                     callback(e.detail.experience);

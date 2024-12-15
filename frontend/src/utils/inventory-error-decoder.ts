@@ -1,4 +1,7 @@
-// src/utils/inventory-error-decoder.ts
+/**
+ * @title Inventory Error Decoder
+ * @notice Decodes and formats ShapeXp inventory system errors
+ */
 import { Interface } from 'ethers';
 import {
     InventoryErrorSignatures,
@@ -7,6 +10,28 @@ import {
     InventoryErrorDetails
 } from '../types/inventory-errors';
 
+/**
+ * @notice Parses inventory operation errors into user-friendly format
+ * @dev Handles multiple error scenarios:
+ * - User rejected transactions
+ * - Contract revert errors
+ * - Gas estimation failures
+ * - General execution errors
+ *
+ * @param error The raw error object from contract interaction
+ * @return InventoryErrorDetails Standardized error object containing:
+ *  - code: Enumerated error code
+ *  - message: Human-readable error message
+ *  - details: (optional) Additional error context
+ *
+ * @custom:errors Handles the following contract errors:
+ * - ShapeXpInvExp__InvalidERC721Contract: Invalid NFT contract
+ * - ShapeXpInvExp__InventoryFull: No available inventory slots
+ * - ShapeXpInvExp__NFTAlreadyInInventory: Duplicate NFT addition
+ * - ShapeXpInvExp__NotInInventory: NFT not found in inventory
+ * - ShapeXpInvExp__NotNFTOwner: Missing NFT ownership
+ * - ShapeXpInvExp__NFTNotInInventory: NFT not found for removal
+ */
 export function parseInventoryError(error: any): InventoryErrorDetails {
     // Handle user rejection
     if (error.code === 'ACTION_REJECTED') {
@@ -89,7 +114,6 @@ export function parseInventoryError(error: any): InventoryErrorDetails {
             }
         }
 
-        // If we couldn't decode the error, check message for clues
         const errorMessage = error.message?.toLowerCase() || '';
         if (errorMessage.includes('inventory full')) {
             return {
