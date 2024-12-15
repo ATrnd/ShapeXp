@@ -1,19 +1,44 @@
-// src/features/nft/nft-experience.ts
+/**
+* @title NFT Experience Management System
+* @notice Manages experience points for individual NFTs
+* @dev Handles NFT-specific experience operations and error handling
+* @custom:module-hierarchy Core Experience Component
+*/
+
 import { getShapeXpContract } from '../../contracts/contract-instances';
 import { getCurrentAddress } from '../../utils/provider';
 import { Interface } from 'ethers';
 
+/**
+* @notice NFT experience query result interface
+* @dev Structure for experience lookup responses
+* @custom:fields
+* - experience: Current experience amount
+* - error: Optional error message
+*/
 export interface NFTExperienceResult {
     experience: string;
     error?: string;
 }
 
+/**
+* @notice NFT experience addition result interface
+* @dev Structure for experience addition responses
+* @custom:fields
+* - success: Operation success status
+* - error: Optional error details
+* - transactionHash: Optional transaction identifier
+*/
 export interface AddNFTExperienceResult {
     success: boolean;
     error?: string;
     transactionHash?: string;
 }
 
+/**
+* @notice Error interface definitions for decoding
+* @dev Custom error parsing for experience operations
+*/
 const errorInterface = new Interface([
     "error ShapeXpInvExp__NotShapeXpNFTOwner()",
     "error ShapeXpInvExp__NotNFTOwner()",
@@ -22,6 +47,10 @@ const errorInterface = new Interface([
     "error ShapeXpInvExp__OnCooldown(uint256 timeRemaining)"
 ]);
 
+/**
+* @notice Error message mapping
+* @dev Human-readable messages for contract errors
+*/
 const ERROR_MESSAGES: { [key: string]: string } = {
     "ShapeXpInvExp__NotShapeXpNFTOwner": "You need to mint a ShapeXp NFT first",
     "ShapeXpInvExp__NotNFTOwner": "You don't own this NFT",
@@ -30,6 +59,17 @@ const ERROR_MESSAGES: { [key: string]: string } = {
     "ShapeXpInvExp__OnCooldown": "Please wait before adding more experience"
 };
 
+/**
+* @notice Retrieves experience points for a specific NFT
+* @dev Fetches current experience amount from contract
+* @param contractAddress The NFT contract address
+* @param tokenId The NFT token ID
+* @return Promise<NFTExperienceResult> Current experience data
+* @custom:requirements
+* - Valid contract address
+* - Valid token ID
+* - NFT in inventory
+*/
 export async function getNFTExperience(
     contractAddress: string,
     tokenId: string
@@ -62,6 +102,23 @@ export async function getNFTExperience(
     }
 }
 
+/**
+* @notice Adds experience points to a specific NFT
+* @dev Transfers experience from global pool to NFT
+* @param nftContract The NFT contract address
+* @param tokenId The NFT token ID
+* @return Promise<AddNFTExperienceResult> Addition operation result
+* @custom:requirements
+* - ShapeXp NFT ownership
+* - NFT in inventory
+* - Sufficient global experience
+* - Not in cooldown
+* @custom:errors
+* - Not owner
+* - Insufficient experience
+* - Cooldown active
+* - Not in inventory
+*/
 export async function addNFTExperience(
     nftContract: string,
     tokenId: string

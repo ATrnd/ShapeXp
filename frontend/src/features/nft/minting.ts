@@ -1,8 +1,21 @@
-// src/features/nft/minting.ts
+/**
+* @title ShapeXp NFT Minting Controller
+* @notice Manages the minting process for ShapeXp NFTs
+* @dev Handles complete minting lifecycle with gas estimation
+* @custom:module-hierarchy Core NFT Management Component
+*/
 import { getShapeXpNFTContract } from '../../contracts/contract-instances';
 import { parseMintError } from '../../utils/mint-error-decoder';
 import { ContractTransactionResponse } from 'ethers';
 
+/**
+* @notice Minting operation result interface
+* @dev Defines the structure for mint operation results
+* @custom:returns
+* - success: Operation success status
+* - tx: Optional transaction response
+* - error: Optional error details with code and message
+*/
 export interface MintResult {
     success: boolean;
     tx?: ContractTransactionResponse;
@@ -13,6 +26,29 @@ export interface MintResult {
     };
 }
 
+/**
+* @notice Mints a new ShapeXp NFT
+* @dev Handles the complete minting process with gas estimation
+* @return Promise<MintResult> Result of the minting operation
+* @custom:flow
+* 1. Get NFT contract instance
+* 2. Estimate gas for transaction
+* 3. Add gas buffer (20%)
+* 4. Submit mint transaction
+* 5. Wait for confirmation
+* 6. Process result
+* @custom:errors
+* - Already minted
+* - Transaction rejected
+* - Gas estimation failure
+* - Network errors
+* @custom:events
+* - NFT minted event
+* @custom:requirements
+* - No existing ShapeXp NFT
+* - Connected wallet
+* - Sufficient ETH for gas
+*/
 export async function mintShapeXpNFT(): Promise<MintResult> {
     try {
         console.log('1. Initiating mint process...');
